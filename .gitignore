@@ -1,0 +1,29 @@
+
+# environment
+.env
+
+# node.js
+node_modules/
+dist/
+build/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+
+# TypeScript
+*.tsbuildinfo
+
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
