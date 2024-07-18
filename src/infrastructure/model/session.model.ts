@@ -24,7 +24,7 @@ const sessionSchema  = new mongoose.Schema<SessionDocument>({
     },
     role:{
         type:String,
-        rquired:true,
+        required:true,
         enum:['teacher','student']
     },
     device:{
@@ -39,7 +39,7 @@ const sessionSchema  = new mongoose.Schema<SessionDocument>({
     createdAt:{
         type:Date,
         required:true
-    }
+    },
 });
 
-export const SessionModel = mongoose.model<SessionDocument>("Sesssions",sessionSchema)
+export const SessionModel = mongoose.model<SessionDocument>("Sessions",sessionSchema)

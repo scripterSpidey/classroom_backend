@@ -7,7 +7,7 @@ interface authReqInput{
     studentRefreshToken:string
 }
 
-export class AuthMiddleware{
+export class StudentAuthMiddleware{
     private authInteractor: I_AuthMiddlewareInteractor;
     constructor(interactor:I_AuthMiddlewareInteractor){
         this.authInteractor = interactor;

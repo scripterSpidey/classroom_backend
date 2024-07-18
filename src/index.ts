@@ -7,7 +7,7 @@ import { PORT } from "./infrastructure/constants/env";
 import { API_ORIGIN } from "./infrastructure/constants/env";
 import cors from "cors"
 import cookieParser from "cookie-parser";
-import errorHandler from "./presentation/middleware/errorHandler";
+import errorHandler from "./presentation/middleware/error.handler";
 
 import adminRouter from "./routes/admin.routes";
 import studentRouter from "./routes/student.routes";

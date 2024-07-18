@@ -1,4 +1,4 @@
-import { JwtPayload } from "jsonwebtoken";
+
 import { JWToutput } from "../application/service/jwt";
 
 export interface I_AuthMiddlewareInteractor{

@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import { I_VerificationDocument } from "./I_studentVerification";
-import { VerificationCodeType } from "./I_studentVerification";
+import { I_VerificationDocument } from "./I_student.verification";
+import { VerificationCodeType } from "./I_student.verification";
 
 export type VerificationDocInputType = {
     userId: string,

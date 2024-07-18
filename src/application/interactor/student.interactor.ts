@@ -5,7 +5,7 @@ import { I_StudentInteractor } from "../../interface/student_interface/I_student
 import { I_StudentRepo } from "../../interface/student_interface/I_student.repo";
 import { I_StudentVerificationRepo } from "../../interface/student_interface/I_StudentVerificationRepo";
 import { otpExpiration } from "../../utils/timers";
-import { VerificationCodeType } from "../../interface/student_interface/I_studentVerification";
+import { VerificationCodeType } from "../../interface/student_interface/I_student.verification";
 import { I_Mailer } from "../../interface/service_interface/I_mailer";
 import { generateSecureOTP } from "../../utils/randomGenerator";
 import { OTPexpirationTime } from "../../infrastructure/constants/appConstants";
@@ -42,8 +42,7 @@ export class StudentInteractor implements I_StudentInteractor{
     async register(data: Student): Promise<any> {
             
         try {
-            const hashPassword = await this.hashPassword.encryptPassword(data.password);
-
+            
             const studentExist = await this.repository.findStudent(data.email);
             if(studentExist){
                 return{
@@ -53,7 +52,8 @@ export class StudentInteractor implements I_StudentInteractor{
                     data:null
                 }
             }
-
+            const hashPassword = await this.hashPassword.encryptPassword(data.password);
+            
             const newStudent =  Student.newStudent(data.name,data.email,hashPassword);
 
             const register =  await this.repository.registerStudent(newStudent);
@@ -87,7 +87,7 @@ export class StudentInteractor implements I_StudentInteractor{
         try {
             const otpDocument = await this.verificationRepository.fetchOTP(studentId);
         
-            if(otpDocument && otpDocument.otp!= otp && (Date.now()-otpDocument.createdAt.getTime())<=OTPexpirationTime){
+            if(otpDocument && otpDocument.otp== otp && (Date.now()-otpDocument.createdAt.getTime())<=OTPexpirationTime){
 
                 const verifiedStudent = await this.repository.verifyStudent(studentId);
 

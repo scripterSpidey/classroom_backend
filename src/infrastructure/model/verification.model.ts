@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { Schema } from "mongoose";
-import { I_VerificationDocument } from "../../interface/student_interface/I_studentVerification";
+import { I_VerificationDocument } from "../../interface/student_interface/I_student.verification";
 
 
 const verificationSchema:Schema = new Schema<I_VerificationDocument>({
@@ -34,9 +34,13 @@ const verificationSchema:Schema = new Schema<I_VerificationDocument>({
     otp:{
         type: String,
         reuired:true
+    },
+    createdAt:{
+        type:Date,
+        required:true
     }
-},{timestamps:true})
+})
 
 
 
-export const StudentVerificationModel = mongoose.model<I_VerificationDocument>("StudentVerifications",verificationSchema)
+export const VerificationModel = mongoose.model<I_VerificationDocument>("verifications",verificationSchema)

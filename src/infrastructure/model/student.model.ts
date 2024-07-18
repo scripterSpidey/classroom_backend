@@ -9,7 +9,8 @@ export interface StudentDocument extends Document{
     createdAt: Date,
     updateAt: Date,
     blocked:boolean,
-    verified:boolean
+    verified:boolean,
+    classrooms:string[]
 }
 
 const studentSchema:Schema =  new Schema<StudentDocument>({
@@ -32,6 +33,9 @@ const studentSchema:Schema =  new Schema<StudentDocument>({
     verified:{
         type:Boolean,
         default: false
+    },
+    classrooms:{
+        type:[String]
     }
 },{timestamps:true})
 
