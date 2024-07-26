@@ -1,6 +1,8 @@
 import { Request,Response,NextFunction } from "express";
-import { I_StudentInteractor } from "../../interface/student_interface/I_student.interactor";
+import { I_StudentInteractor, ResendOTPInput } from "../../interface/student_interface/I_student.interactor";
 import { accessTokenExpirationTime,refreshTokenExpirationTime } from "../../infrastructure/constants/appConstants";
+import { CostumeError } from "../../utils/costume.error";
+import { GoogleLoginInputType } from "../../schema/google.login.schema";
 interface LoginReq{
     email: string,
     password:string
@@ -18,12 +20,8 @@ export class StudentController{
         try {
             const data = req.body;
             const registered = await this.interactor.register(data);
-        
-            return res.status(registered.status).json({
-                registered:registered.registered,
-                message:registered.message,
-                data:registered.data
-            })
+            
+            return res.status(201).json({...registered})
         } catch (error:any) {
             next(error)
         }
@@ -32,8 +30,9 @@ export class StudentController{
 
     async onVerifyOTP(req:Request,res:Response,next:NextFunction){
         try {
-            const {otp,studentId} = req.body ;
-            const verifiedStatus = await this.interactor.verifyOTP(otp,studentId);
+            const {otp,userId} = req.body ;
+            
+            const verifiedStatus = await this.interactor.verifyOTP(otp,userId);
             res.cookie("studentAccessToken",verifiedStatus.accessToken,{
                 maxAge:accessTokenExpirationTime,
                 httpOnly: true
@@ -44,7 +43,14 @@ export class StudentController{
                 // secure:true
             })
 
-            res.status(verifiedStatus.status).json(verifiedStatus)
+            
+            res.status(201).json({
+                verified:true,
+                message:"OTP verification successfull",
+                email:verifiedStatus.email,
+                userId:verifiedStatus.userId,
+                name:verifiedStatus.name
+            })
         } catch (error) {
             next(error)
         }
@@ -58,18 +64,18 @@ export class StudentController{
             res.cookie("studentAccessToken",authenticated.accessToken,{
                 maxAge:accessTokenExpirationTime,
                 httpOnly: true,
-                // secure:true
             })
 
             res.cookie("studentRefreshToken",authenticated.refreshToken,{
                 maxAge:refreshTokenExpirationTime,
                 httpOnly: true,
-                // secure:true
             })
 
-            // delete authenticated.accessToken;
-
-            res.status(authenticated.status).json(authenticated)
+            res.status(authenticated.status).json({
+                name:authenticated.name,
+                email:authenticated.email,
+                id:authenticated.id
+            })
         } catch (error) {
             next(error);
         }
@@ -83,11 +89,54 @@ export class StudentController{
                 maxAge:0,
                 httpOnly:true
             });
+            res.cookie('studentRefreshToken','',{
+                maxAge:0,
+                httpOnly:true
+            });
             res.status(200).json({
                 authenticated:false
             })
         } catch (error) {
             
+        }
+    }
+
+    async onResendOTP(req:Request,res:Response,next:NextFunction):Promise<void>{
+        try {
+            const data:ResendOTPInput = req.body  ;
+
+            await this.interactor.resendOTP(data);
+
+            res.status(200).json({
+                resend:true,
+                message:"OTP has been resended"
+            })
+
+        } catch (error) {
+            next(error)
+        }
+        
+    }
+
+    async onGoogleLogin(req:Request,res:Response,next:NextFunction):Promise<void>{
+        try {
+            const data = req.body;
+
+            const registerResponse = await this.interactor.googleLogin(data);
+
+            res.cookie("studentAccessToken",registerResponse.accessToken,{
+                maxAge:accessTokenExpirationTime,
+                httpOnly: true,
+            })
+
+            res.cookie("studentRefreshToken",registerResponse.refreshToken,{
+                maxAge:refreshTokenExpirationTime,
+                httpOnly: true,
+            })
+
+            res.status(200).json(registerResponse)
+        } catch (error) {
+            next(error)
         }
     }
 

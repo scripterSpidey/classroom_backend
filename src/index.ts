@@ -6,18 +6,21 @@ import { connectToDB } from "./infrastructure/config/mongoDB";
 import { PORT } from "./infrastructure/constants/env";
 import { API_ORIGIN } from "./infrastructure/constants/env";
 import cors from "cors"
+import morgan from 'morgan'; // Import Morgan
 import cookieParser from "cookie-parser";
 import errorHandler from "./presentation/middleware/error.handler";
 
 import adminRouter from "./routes/admin.routes";
 import studentRouter from "./routes/student.routes";
-import teacherRouter from "./routes/teacher.routes"
+import teacherRouter from "./routes/teacher.routes";
 
 const startServer = async(): Promise<void>=>{
     
     await connectToDB();
 
     const app = express();
+
+    app.use(morgan('dev'))
 
     app.use(express.json());
     app.use(express.urlencoded({extended:true}));
@@ -28,13 +31,6 @@ const startServer = async(): Promise<void>=>{
         })
     )
     app.use(cookieParser())
-    // app.get('/', catchErrors(async (req,res,next)=>{
-    //     try {
-    //         throw new Error('test error')
-    //     } catch (error) {
-    //         next(error)
-    //     }
-    // }))
     app.use('/admin',adminRouter);
     app.use('/teacher',teacherRouter);
     app.use('/student',studentRouter);

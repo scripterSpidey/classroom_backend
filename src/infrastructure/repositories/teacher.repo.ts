@@ -33,14 +33,16 @@ export class TeacherRepo implements I_TeacherRepo{
         }
     }
 
-    async verifyTeacher(userId:string): Promise< void > {
+    async verifyTeacher(userId:string): Promise< TeacherDocument|null > {
         try {
-            await TeacherModel.findByIdAndUpdate(
+            const verify = await TeacherModel.findByIdAndUpdate(
                 userId,
                 {verified:true}
             );
 
             await VerificationModel.deleteOne({userId});
+
+            return verify;
             
         } catch (error) {
             throw error

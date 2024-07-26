@@ -9,10 +9,17 @@ export type VerificationDocInputType = {
     otp:string,
     email:string,
     name:string,
+    role:"student"|"teacher",
+    createdAt: Date
+}
+
+export type UpdateOTPInput ={
+    userId:string,
+    otp:string|number
 }
 
 export interface I_StudentVerificationRepo{
     saveDocument(data:VerificationDocInputType):Promise<void>;
-    updateDocument(data:string):Promise<void>;
     fetchOTP(data:string):Promise<any>;
+    updateOTP(data:UpdateOTPInput):Promise<any>
 }

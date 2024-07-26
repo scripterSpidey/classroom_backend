@@ -1,6 +1,7 @@
 import { NextFunction,Request,Response } from "express";
 import { I_AuthMiddlewareInteractor } from "../../interface/I_auth.middleware.interactor";
 import { accessTokenExpirationTime } from "../../infrastructure/constants/appConstants";
+import { CostumeError } from "../../utils/costume.error";
 
 interface authReqInput{
     studentAccessToken:string,
@@ -13,67 +14,40 @@ export class StudentAuthMiddleware{
         this.authInteractor = interactor;
     };
 
-    async authenticateHandler(req:Request,res:Response,next:NextFunction){
+
+    async authenticateStudent(req: Request, res: Response, next: NextFunction) {
+
+        const { studentAccessToken, studentRefreshToken } = req.cookies as authReqInput;
+
         try {
-            const {studentAccessToken,studentRefreshToken} = req.cookies as authReqInput;
+            if (studentAccessToken) {
+                const decryptedAccessToken = this.authInteractor.decryptToken(studentAccessToken);
 
-            
+                if (decryptedAccessToken.message == 'Authenticated') return next();
 
-            if(!studentAccessToken && !studentRefreshToken || (!studentRefreshToken)){
-                return res.status(401).json({
-                    authenticated:false,
-                    message:"No user access token",
-                    data:null
-                })
             }
 
-            if(studentAccessToken){
-                const decryptedAccessToken =  this.authInteractor.decryptToken(studentAccessToken);
+            if (studentRefreshToken) {
+                const decryptedRefreshToken = this.authInteractor.decryptToken(studentRefreshToken);
+                
+                if (decryptedRefreshToken.payload) {
+                    const activeSession = await this.authInteractor.validateSession(decryptedRefreshToken.payload.sessionId);
+                    
+                    if (activeSession) {
 
-                switch(decryptedAccessToken.message){
-    
-                    case "Authenticated":
+                        const newAccessToken = await this.authInteractor.newAccessToken(decryptedRefreshToken.payload.sessionId);
+
+                        res.cookie("teacherAccessToken", newAccessToken, {
+                            maxAge: accessTokenExpirationTime,
+                            httpOnly: true
+                        });
+
                         return next();
-    
-                    case "jwt expired":
-    
-                        const decryptedRefreshToken =  this.authInteractor.decryptToken(studentRefreshToken);
-    
-                        if(decryptedRefreshToken.message == 'invalid token' || decryptedRefreshToken.message=='jwt expired'){
-                            return res.status(401).json({
-                                authenticated:false,
-                                message: decryptedRefreshToken.message
-                            })
-                        };
-    
-                        if(decryptedRefreshToken.payload){
-    
-                            const activeSession = await  this.authInteractor.validateSession(decryptedRefreshToken.payload.sessionId);
-    
-                            if(activeSession){
-    
-                                const newAccessToken = await this.authInteractor.newAccessToken(decryptedRefreshToken.payload.sessionId);
-    
-                                res.cookie("studentAccessToken",newAccessToken,{
-                                    maxAge:accessTokenExpirationTime,
-                                    httpOnly: true
-                                });
-    
-                                return next();
-                            }
-                            
-                            return res.status(401).json({authenticated:false})
-                        }
-    
-                    case "invalid token":
-    
-                        return res.status(401).json({
-                            authenticated:false,
-                            message:'Invalid token'
-                        })    
+                    }
                 }
             }
-          
+
+            throw new CostumeError(401, "Invalid credentials");
         } catch (error) {
             next(error)
         }

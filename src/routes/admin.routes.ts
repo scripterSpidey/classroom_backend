@@ -1,7 +1,7 @@
 import express from "express";
 import { AdminRepo } from "../infrastructure/repositories/admin.repo";
 import { AdminInteractor } from "../application/interactor/admin.interactor";
-import { AdminContoller } from "../presentation/controllers/admin.controller";
+import { AdminContoller } from "../presentation/gateway/admin.gateway";
 
 const router = express.Router();
 

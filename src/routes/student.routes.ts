@@ -1,7 +1,7 @@
 import express from "express";
 import { StudentRepo } from "../infrastructure/repositories/student.repo";
 import { StudentInteractor } from "../application/interactor/student.interactor";
-import { StudentController } from "../presentation/controllers/student.controller";
+import { StudentController } from "../presentation/gateway/student.gateway";
 import { registrationSchema } from "../schema/registration.schema";
 import { verificationOTPSchema } from "../schema/otp.verification.schema";
 import { HashPassword } from "../application/service/bcrypt";
@@ -13,21 +13,25 @@ import { StudentAuthMiddleware } from "../presentation/middleware/student.auth.m
 import { StudentAuthInteractor } from "../application/interactor/student.auth.interactor";
 import { loginSchema } from "../schema/login.schema";
 import { logoutSchema } from "../schema/logut.schema";
+import { googelLoginSchema } from "../schema/google.login.schema";
+
+import { API } from "../application/service/api.requests";
 
 // services
 const bcrypt = new HashPassword();
 const jwtTokens = new JWT();
 const emailService = new EmailService();
+const APIRequests = new API()
 
 // repositories
 const studentRepo = new StudentRepo();
 const verificationRepo = new StudentVerificationRepo();
 
 // interactors
-const studentInteractor = new StudentInteractor(studentRepo,verificationRepo,bcrypt,emailService,jwtTokens);
+const studentInteractor = new StudentInteractor(studentRepo,verificationRepo,bcrypt,emailService,jwtTokens,APIRequests);
 
 //controller
-const studentController = new StudentController(studentInteractor);
+const studentGateway = new StudentController(studentInteractor);
 
 const authMiddlewareInteractor = new StudentAuthInteractor(jwtTokens,studentRepo);
 const studentAuth = new StudentAuthMiddleware(authMiddlewareInteractor);
@@ -39,18 +43,30 @@ const router = express.Router();
 
 router.post('/register',
     validate(registrationSchema),
-    studentController.onRegister.bind(studentController));
-router.post('/register/verify',
+    studentGateway.onRegister.bind(studentGateway));
+router.post('/verify',
     validate(verificationOTPSchema),
-    studentController.onVerifyOTP.bind(studentController));
+    studentGateway.onVerifyOTP.bind(studentGateway));
 router.post('/login',
     validate(loginSchema),
-    studentController.onLogin.bind(studentController));
+    studentGateway.onLogin.bind(studentGateway));
 router.post('/logout',
     validate(logoutSchema),
-    studentController.onLogout.bind(studentController))
+    studentGateway.onLogout.bind(studentGateway))
+router.patch('/resend_otp',
+    studentGateway.onResendOTP.bind(studentGateway)
+)
+
+router.post('/google_login',
+    validate(googelLoginSchema),
+    studentGateway.onGoogleLogin.bind(studentGateway)
+)
+
+
 router.get('/auth',
-    studentAuth.authenticateHandler.bind(studentAuth),
-    studentController.onAuthRoute.bind(studentController))
+    studentAuth.authenticateStudent.bind(studentAuth),
+    studentGateway.onAuthRoute.bind(studentGateway))
+
+
 
 export default router 

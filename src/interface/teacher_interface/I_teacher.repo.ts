@@ -10,7 +10,7 @@ export interface I_TeacherRepo{
 
     getVerificationDocument(userId:string):Promise<I_VerificationDocument|null>;
 
-    verifyTeacher(userId:string):Promise< void >;
+    verifyTeacher(userId:string):Promise< TeacherDocument|null >;
 
     createSession(data:object):Promise<SessionDocument>;
 

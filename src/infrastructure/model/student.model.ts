@@ -1,6 +1,7 @@
 import mongoose  from "mongoose";
 import { Schema,Document } from "mongoose";
 import { Model } from "mongoose";
+import { string } from "zod";
 
 export interface StudentDocument extends Document{
     email: string,
@@ -10,7 +11,8 @@ export interface StudentDocument extends Document{
     updateAt: Date,
     blocked:boolean,
     verified:boolean,
-    classrooms:string[]
+    classrooms:string[],
+    profile_image: string|null
 }
 
 const studentSchema:Schema =  new Schema<StudentDocument>({
@@ -25,7 +27,7 @@ const studentSchema:Schema =  new Schema<StudentDocument>({
     },
     password:{
         type: String,
-        required:true
+        default:null
     },
     blocked:{
         type:Boolean
@@ -36,6 +38,10 @@ const studentSchema:Schema =  new Schema<StudentDocument>({
     },
     classrooms:{
         type:[String]
+    },
+    profile_image:{
+        type:String,
+        default:null
     }
 },{timestamps:true})
 

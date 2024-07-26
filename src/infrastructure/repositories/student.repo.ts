@@ -2,6 +2,8 @@ import { Student } from "../../domain/entities/student";
 import { I_StudentRepo } from "../../interface/student_interface/I_student.repo";
 import { StudentDocument, StudentModel } from "../model/student.model";
 import { SessionDocument, SessionModel } from "../model/session.model";
+import { stdSerializers } from "pino";
+
 
 export type registerStudentOutput ={
     name: string,
@@ -10,30 +12,22 @@ export type registerStudentOutput ={
 
 export class StudentRepo implements I_StudentRepo{
     
-    
-    async verifyStudent(data: string): Promise<StudentDocument|null> {
+    async verifyStudent(userId: string): Promise<StudentDocument|null> {
         try {
             return await StudentModel.findOneAndUpdate(
-                {userId:data},
+                {_id:userId},
                 {$set:{verified:true}}
             )
         } catch (error) {
             throw error;
-        }
-        
+        } 
     }
-
-   
 
     async registerStudent(data: Student): Promise<any> {
       
         try {
             const newStudent = await new StudentModel(data).save();
-            return {
-                id:newStudent._id,
-                name: newStudent.name,
-                email: newStudent.email,
-            }
+            return newStudent;
         } catch (error) {
             console.log("Error saving document: ",error);
             throw error
@@ -42,7 +36,8 @@ export class StudentRepo implements I_StudentRepo{
 
     async findStudent(email: string): Promise<StudentDocument|null> {
         try {
-            return await StudentModel.findOne({email});
+            return await StudentModel.findOne({email:email});
+           
         } catch (error) {
             throw error
         }
@@ -50,6 +45,7 @@ export class StudentRepo implements I_StudentRepo{
 
     async createSession(data:object):Promise<SessionDocument>{
         try {
+            console.log(data)
             return await new SessionModel(data).save()
         } catch (error) {
             throw error;

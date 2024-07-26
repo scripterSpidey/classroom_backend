@@ -1,7 +1,7 @@
 
 import { Student } from "../../domain/entities/student";
 import { I_Bcrypt } from "../../interface/service_interface/I_bcrypt";
-import { I_StudentInteractor } from "../../interface/student_interface/I_student.interactor";
+import { I_StudentInteractor, ResendOTPInput } from "../../interface/student_interface/I_student.interactor";
 import { I_StudentRepo } from "../../interface/student_interface/I_student.repo";
 import { I_StudentVerificationRepo } from "../../interface/student_interface/I_StudentVerificationRepo";
 import { otpExpiration } from "../../utils/timers";
@@ -12,6 +12,11 @@ import { OTPexpirationTime } from "../../infrastructure/constants/appConstants";
 import { StudentDocument } from "../../infrastructure/model/student.model";
 import { threadId } from "worker_threads";
 import { I_JWT } from "../../interface/service_interface/I_jwt";
+import { CostumeError } from "../../utils/costume.error";
+import { string } from "zod";
+import { GoogleLoginInputType } from "../../schema/google.login.schema";
+import { I_API } from "../../interface/service_interface/I_API.requests";
+
 
 
 export class StudentInteractor implements I_StudentInteractor{
@@ -22,19 +27,22 @@ export class StudentInteractor implements I_StudentInteractor{
     private verificationRepository: I_StudentVerificationRepo;
     private mailer: I_Mailer
     private jwt:I_JWT
+    private api:I_API
 
     constructor(
         repository: I_StudentRepo,
         verificationRepository:I_StudentVerificationRepo,
         hashPassword:I_Bcrypt,
         mailer: I_Mailer,
-        jwt:I_JWT
+        jwt:I_JWT,
+        api:I_API
     ){
         this.repository = repository;
         this.hashPassword = hashPassword;
         this.verificationRepository = verificationRepository
         this.mailer = mailer;
         this.jwt = jwt;
+        this.api = api;
     }
     
     
@@ -45,16 +53,18 @@ export class StudentInteractor implements I_StudentInteractor{
             
             const studentExist = await this.repository.findStudent(data.email);
             if(studentExist){
-                return{
-                    status:409,
-                    registered:false,
-                    message:"This account already exists",
-                    data:null
-                }
+                throw new CostumeError(409,"This user already exist")
             }
-            const hashPassword = await this.hashPassword.encryptPassword(data.password);
+            const hashPassword = await this.hashPassword.encryptPassword(data.password as string);
             
-            const newStudent =  Student.newStudent(data.name,data.email,hashPassword);
+            const newStudent =  Student.newStudent(
+                data.name,
+                data.email,
+                hashPassword,
+                false,
+                false,
+                [],
+                null);
 
             const register =  await this.repository.registerStudent(newStudent);
            
@@ -63,8 +73,10 @@ export class StudentInteractor implements I_StudentInteractor{
             await this.verificationRepository.saveDocument({
                 email:register.email,
                 name:register.name,
+                role:"student",
                 userId:register.id,
                 type: VerificationCodeType.EmailVerification,
+                createdAt:new Date(),
                 expiresAt: otpExpiration(),
                 otp
             });
@@ -72,10 +84,11 @@ export class StudentInteractor implements I_StudentInteractor{
             await this.mailer.sendEmail(register.email,"otp",otp)
 
             return{
-                status:201,
                 registered:true,
                 message:'Registration successfull',
-                data:register
+                email:register.email,
+                id:register.id,
+                name:register.name
             }
             
         } catch (error) {
@@ -86,16 +99,20 @@ export class StudentInteractor implements I_StudentInteractor{
     async verifyOTP(otp:string,studentId:string):Promise<any>{
         try {
             const otpDocument = await this.verificationRepository.fetchOTP(studentId);
-        
-            if(otpDocument && otpDocument.otp== otp && (Date.now()-otpDocument.createdAt.getTime())<=OTPexpirationTime){
+
+            if(!otpDocument) throw new CostumeError(404,'User not found');
+
+            if(otpDocument && otpDocument.otp== otp
+                 && (Date.now()-otpDocument.createdAt.getTime())<=OTPexpirationTime
+                ){
 
                 const verifiedStudent = await this.repository.verifyStudent(studentId);
-
                 if(verifiedStudent){
                     const session = await this.repository.createSession({
                         userId:verifiedStudent._id,
                         role:"student",
                         device:"laptop",
+                        active:true,
                         createdAt:Date.now()
                     })
                     const accessToken = this.jwt.generateToken({
@@ -106,30 +123,19 @@ export class StudentInteractor implements I_StudentInteractor{
                     const refreshToken = this.jwt.generateToken({
                         sessionId : session._id
                     },"1d");
-                    
                     return {
-                        status:200,
-                        verified:true,
-                        message:"OTP verification successfull",
                         accessToken,
                         refreshToken,
-                        data:{
-                            email:verifiedStudent.email,
-                            userId:verifiedStudent._id,
-                            name:verifiedStudent.name
-                        }
+                        email:verifiedStudent.email,
+                        userId:verifiedStudent._id,
+                        name:verifiedStudent.name
                     }
                 }else{
-                    throw new Error("oops! something went wrong")
+                    throw new CostumeError(401,"Verification failed")
                 }
                 
             }else{
-                return {
-                    status:401,
-                    verified:false,
-                    message:"OTP expired or doesnot match",
-                    data:null
-                }
+                throw new CostumeError(401,"OTP doesnot match or expired")
             }
             }catch (error:any) {
                 throw error
@@ -139,14 +145,15 @@ export class StudentInteractor implements I_StudentInteractor{
         async login(email: string, password: string): Promise<any> {
            try {
                 const student = await this.repository.findStudent(email);
-                if(student && await this.hashPassword.comparePassword(password,student?.password)){
+                
+                if(student && await this.hashPassword.comparePassword(password,String(student?.password))){
 
                     const session = await this.repository.createSession({
                         userId:student._id,
                         role:"student",
                         device:"laptop",
+                        active: true,
                         createdAt:Date.now(),
-                        active: true
                     });
 
                     const accessToken = this.jwt.generateToken({
@@ -164,11 +171,9 @@ export class StudentInteractor implements I_StudentInteractor{
                         message:"Logged in successfully",
                         accessToken,
                         refreshToken,
-                        data:{
-                            email:student.email,
-                            id:student._id,
-                            name:student.name
-                        }
+                        email:student.email,
+                        id:student._id,
+                        name:student.name
                     }
                 }else{
                     return {
@@ -186,6 +191,78 @@ export class StudentInteractor implements I_StudentInteractor{
         async logout(userId:string):Promise<void>  {
             try {
                 await this.repository.endSession(userId);
+            } catch (error) {
+                throw error
+            }
+        }
+
+        async resendOTP(data: ResendOTPInput): Promise<any> {
+            try {
+                const otp = generateSecureOTP();
+
+                await this.verificationRepository.updateOTP({
+                    userId:data.userId,
+                    otp
+                });
+
+                this.mailer.sendEmail(data.userEmail,"otp",otp)
+                
+            } catch (error) {
+                throw error;
+            }
+        }
+
+       
+
+        async googleLogin(data: GoogleLoginInputType): Promise<object> {
+            try {
+                
+                const userProfile= await this.api.getUserProfileFromGoogle(data)
+                
+                let existingStudent = await this.repository.findStudent(userProfile.email);
+                
+                if(!existingStudent){
+
+                    const newStudent =  Student.newStudent(
+                        userProfile.name,
+                        userProfile.email,
+                        null,
+                        false,
+                        true,
+                        [],
+                        userProfile.picture
+                    );
+    
+                    existingStudent = await this.repository.registerStudent(newStudent);
+                }
+
+                const session = await this.repository.createSession({
+                    userId:existingStudent?._id,
+                    role:"student",
+                    device:"laptop",
+                    active: true,
+                    createdAt:Date.now(),
+                });
+
+                const accessToken = this.jwt.generateToken({
+                    userId:existingStudent?._id,
+                    sessionId:session._id
+                },"1m");
+
+                const refreshToken = this.jwt.generateToken({
+                    sessionId : session._id
+                },"1d");
+                
+                return {
+                    authenticated:true,
+                    message:'google login successfull',
+                    accessToken,
+                    refreshToken,
+                    email:existingStudent?.email,
+                    id:existingStudent?._id,
+                    name:existingStudent?.name,
+                    profile_image:existingStudent?.profile_image
+                }
             } catch (error) {
                 throw error
             }
