@@ -32,9 +32,10 @@ const teacherSchema:mongoose.Schema = new mongoose.Schema<TeacherDocument>({
         type:Boolean,
         default: false
     },
-    classrooms:{
-        type:[String]
-    },
+    classrooms:[{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:'classrooms'
+    }],
     profile_image:{
         type:String,
         default:null

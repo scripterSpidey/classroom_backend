@@ -1,5 +1,5 @@
 import mongoose  from "mongoose";
-import { string } from "zod";
+
 
 export const enum roleType{
     teacher = "teacher",

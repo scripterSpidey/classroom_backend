@@ -19,7 +19,7 @@ export class TeacherRepo implements I_TeacherRepo{
 
     async findTeacher(email: string): Promise<TeacherDocument | null> {
         try {
-            return await TeacherModel.findOne({email});
+            return await TeacherModel.findOne({email}).populate('classrooms');
         } catch (error) {
             throw error
         }
@@ -35,10 +35,11 @@ export class TeacherRepo implements I_TeacherRepo{
 
     async verifyTeacher(userId:string): Promise< TeacherDocument|null > {
         try {
+            
             const verify = await TeacherModel.findByIdAndUpdate(
                 userId,
                 {verified:true}
-            );
+            ).populate('classrooms');
 
             await VerificationModel.deleteOne({userId});
 

@@ -7,13 +7,12 @@ import { I_TeacherRepo } from "../../interface/teacher_interface/I_teacher.repo"
 import { generateSecureOTP } from "../../utils/randomGenerator";
 import { otpExpiration } from "../../utils/timers";
 import { LoDashStatic } from "lodash";
-import { I_VerificationDocument } from "../../interface/student_interface/I_student.verification";
 import { OTPexpirationTime } from "../../infrastructure/constants/appConstants";
 import { I_JWT } from "../../interface/service_interface/I_jwt";
 import { CostumeError } from "../../utils/costume.error";
-import { Student } from "../../domain/entities/student";
 import { GoogleLoginInputType } from "../../schema/google.login.schema";
 import { I_API } from "../../interface/service_interface/I_API.requests";
+import { TeacherRepo } from "../../infrastructure/repositories/teacher.repo";
 
 
 export class TeacherInteractor implements I_TeacherInteractor {
@@ -39,6 +38,7 @@ export class TeacherInteractor implements I_TeacherInteractor {
         this.lodash = lodash,
         this.api = api;
     }
+    
     resendOTP(data: { userId: string; userEmail: string; }): Promise<any> {
         throw new Error("Method not implemented.");
     }
@@ -120,18 +120,15 @@ export class TeacherInteractor implements I_TeacherInteractor {
 
 
             const refreshToken = this.jwt.generateToken({
-                sessionId: session._id
+                sessionId: session._id,
+                userId: data.userId
             }, "1d");
 
             return {
-                status: 200,
-                verified: true,
-                message: "OTP verification successfull",
+                
                 accessToken,
                 refreshToken,
-                id: verify?._id,
-                name: verify?.name,
-                email: verify?.email
+                ...verify!.toObject()
             }
 
         } catch (error) {
@@ -162,17 +159,15 @@ export class TeacherInteractor implements I_TeacherInteractor {
                 }, "2m");
 
                 const refreshToken = this.jwt.generateToken({
+                    userId: teacher._id,
                     sessionId: session._id
                 }, "1d");
-
+                teacher.password = ''
                 return {
-                    authenticated: true,
-                    message: "Logged in successully",
+                   
                     accessToken,
                     refreshToken,
-                    email: teacher.email,
-                    id: teacher._id,
-                    name: teacher.name
+                    ...teacher.toObject()
                 }
             }
             throw new CostumeError(401, "Invalid credentials");
@@ -213,7 +208,7 @@ export class TeacherInteractor implements I_TeacherInteractor {
 
                 existingTeacher = await this.repository.registerTeacher(newTeacher);
             }
-
+            existingTeacher.password = ''
             const session = await this.repository.createSession({
                 userId: existingTeacher?._id,
                 role: "teacher",
@@ -228,18 +223,15 @@ export class TeacherInteractor implements I_TeacherInteractor {
             }, "1m");
 
             const refreshToken = this.jwt.generateToken({
+                userId: existingTeacher?._id,
                 sessionId: session._id
             }, "1d");
-
+            console.log('existing teacher from google: ',existingTeacher)
             return {
-                authenticated: true,
-                message: 'google login successfull',
+               
                 accessToken,
                 refreshToken,
-                email: existingTeacher?.email,
-                id: existingTeacher?._id,
-                name: existingTeacher?.name,
-                profile_image: existingTeacher?.profile_image
+                ...existingTeacher.toObject()
             }
         } catch (error) {
             throw error

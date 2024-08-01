@@ -1,4 +1,4 @@
-import { boolean, number, object,string, TypeOf } from "zod";
+import {  number, object,string, TypeOf } from "zod";
 
 
 export const googelLoginSchema = object({

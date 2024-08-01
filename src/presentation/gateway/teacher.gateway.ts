@@ -1,6 +1,7 @@
 import { NextFunction,Request,Response } from "express";
 import { I_TeacherInteractor } from "../../interface/teacher_interface/I_teacher.interactor";
 import { accessTokenExpirationTime, refreshTokenExpirationTime } from "../../infrastructure/constants/appConstants";
+import { CostumeRequest } from "../../interface/I_express.request";
 
 
 export class TeacherController{
@@ -83,7 +84,7 @@ export class TeacherController{
                 maxAge:0,
                 httpOnly:true
             });
-            
+
             res.status(200).json({
                 authenticated:false,
                 message:"loggedout successfully"
@@ -115,8 +116,13 @@ export class TeacherController{
         }
     }
 
-    onAuthRoute(req:Request,res:Response,next:NextFunction){
-        return res.status(201).json({authenticated:"valid user"})
+    
+
+
+    onAuthRoute(req:CostumeRequest,res:Response,next:NextFunction){
+        const user = req.user;
+        console.log('user',user)
+        res.status(201).json(user)
     }
 
-}
+}   

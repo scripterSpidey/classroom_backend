@@ -3,6 +3,7 @@ import { I_StudentInteractor, ResendOTPInput } from "../../interface/student_int
 import { accessTokenExpirationTime,refreshTokenExpirationTime } from "../../infrastructure/constants/appConstants";
 import { CostumeError } from "../../utils/costume.error";
 import { GoogleLoginInputType } from "../../schema/google.login.schema";
+import { CostumeRequest } from "../../interface/I_express.request";
 interface LoginReq{
     email: string,
     password:string
@@ -44,13 +45,7 @@ export class StudentController{
             })
 
             
-            res.status(201).json({
-                verified:true,
-                message:"OTP verification successfull",
-                email:verifiedStatus.email,
-                userId:verifiedStatus.userId,
-                name:verifiedStatus.name
-            })
+            res.status(201).json(verifiedStatus)
         } catch (error) {
             next(error)
         }
@@ -71,11 +66,7 @@ export class StudentController{
                 httpOnly: true,
             })
 
-            res.status(authenticated.status).json({
-                name:authenticated.name,
-                email:authenticated.email,
-                id:authenticated.id
-            })
+            res.status(authenticated.status).json(authenticated)
         } catch (error) {
             next(error);
         }
@@ -123,7 +114,7 @@ export class StudentController{
             const data = req.body;
 
             const registerResponse = await this.interactor.googleLogin(data);
-
+            console.log('google response: ',registerResponse)
             res.cookie("studentAccessToken",registerResponse.accessToken,{
                 maxAge:accessTokenExpirationTime,
                 httpOnly: true,
@@ -140,8 +131,11 @@ export class StudentController{
         }
     }
 
-    onAuthRoute(req:Request,res:Response,next:NextFunction){
-        return res.status(201).json({authenticated:"valid user"})
+    onAuthRoute(req:CostumeRequest,res:Response,next:NextFunction){
+
+        const user = req.user;
+        console.log('user',user)
+        res.status(201).json(user)
     }
 
 }

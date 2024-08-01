@@ -126,9 +126,7 @@ export class StudentInteractor implements I_StudentInteractor{
                     return {
                         accessToken,
                         refreshToken,
-                        email:verifiedStudent.email,
-                        userId:verifiedStudent._id,
-                        name:verifiedStudent.name
+                        ...verifiedStudent.toObject()
                     }
                 }else{
                     throw new CostumeError(401,"Verification failed")
@@ -164,24 +162,14 @@ export class StudentInteractor implements I_StudentInteractor{
                     const refreshToken = this.jwt.generateToken({
                         sessionId : session._id
                     },"1d");
-
+                    student.password = ''
                     return {
-                        status:200,
-                        authenticated:true,
-                        message:"Logged in successfully",
                         accessToken,
                         refreshToken,
-                        email:student.email,
-                        id:student._id,
-                        name:student.name
+                        ...student.toObject()
                     }
                 }else{
-                    return {
-                        status:401,
-                        authenticated:false,
-                        message:"Invalid credentials",
-                        data:null
-                    }
+                    throw new CostumeError(401,"Password doesnot match")
                 }
            } catch (error) {
                 throw error
@@ -252,16 +240,13 @@ export class StudentInteractor implements I_StudentInteractor{
                 const refreshToken = this.jwt.generateToken({
                     sessionId : session._id
                 },"1d");
-                
+
+                console.log('exosting form google lohin: ',existingStudent)
+                existingStudent.password = ''
                 return {
-                    authenticated:true,
-                    message:'google login successfull',
                     accessToken,
                     refreshToken,
-                    email:existingStudent?.email,
-                    id:existingStudent?._id,
-                    name:existingStudent?.name,
-                    profile_image:existingStudent?.profile_image
+                    ...existingStudent.toObject()
                 }
             } catch (error) {
                 throw error

@@ -36,13 +36,14 @@ const studentSchema:Schema =  new Schema<StudentDocument>({
         type:Boolean,
         default: false
     },
-    classrooms:{
-        type:[String]
-    },
+    classrooms:[{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:'classrooms'
+    }],
     profile_image:{
         type:String,
         default:null
     }
 },{timestamps:true})
 
-export const StudentModel:Model<StudentDocument> = mongoose.model<StudentDocument>("Students",studentSchema)
+export const StudentModel:Model<StudentDocument> = mongoose.model<StudentDocument>("students",studentSchema)

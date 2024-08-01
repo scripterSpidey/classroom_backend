@@ -11,6 +11,7 @@ const validate = (schema: AnyZodObject)=>(req:Request,res:Response,next:NextFunc
         console.log('data is ok: ',req.body)
         next()
     } catch (error: any) {
+        console.log('bad request',error)
         return res.status(400).json(error.errors)
     }
 }

@@ -2,6 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import { I_AuthMiddlewareInteractor } from "../../interface/I_auth.middleware.interactor";
 import { accessTokenExpirationTime } from "../../infrastructure/constants/appConstants";
 import { CostumeError } from "../../utils/costume.error";
+import { CostumeRequest } from "../../interface/I_express.request";
+
 
 interface authReqInput {
     teacherAccessToken: string,
@@ -14,7 +16,7 @@ export class TeacherAuthMiddleware {
         this.authInteractor = interactor;
     };
 
-    async authenticateTeacher(req: Request, res: Response, next: NextFunction) {
+    async authenticateTeacher(req: CostumeRequest, res: Response, next: NextFunction) {
 
         const { teacherAccessToken, teacherRefreshToken } = req.cookies as authReqInput;
 
@@ -22,8 +24,11 @@ export class TeacherAuthMiddleware {
             if (teacherAccessToken) {
                 const decryptedAccessToken = this.authInteractor.decryptToken(teacherAccessToken);
 
-                if (decryptedAccessToken.message == 'Authenticated') return next();
-
+                if (decryptedAccessToken.message == 'Authenticated'){
+                    req.user = decryptedAccessToken.payload;
+                    return next();
+                } 
+ 
             }
 
             if (teacherRefreshToken) {
@@ -35,7 +40,7 @@ export class TeacherAuthMiddleware {
                     if (activeSession) {
 
                         const newAccessToken = await this.authInteractor.newAccessToken(decryptedRefreshToken.payload.sessionId);
-
+                        req.user = decryptedRefreshToken.payload
                         res.cookie("teacherAccessToken", newAccessToken, {
                             maxAge: accessTokenExpirationTime,
                             httpOnly: true

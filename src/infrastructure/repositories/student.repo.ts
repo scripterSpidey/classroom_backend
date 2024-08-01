@@ -16,8 +16,9 @@ export class StudentRepo implements I_StudentRepo{
         try {
             return await StudentModel.findOneAndUpdate(
                 {_id:userId},
-                {$set:{verified:true}}
-            )
+                {$set:{verified:true}},
+                {new:true}
+            ).select('-password')
         } catch (error) {
             throw error;
         } 
@@ -27,16 +28,18 @@ export class StudentRepo implements I_StudentRepo{
       
         try {
             const newStudent = await new StudentModel(data).save();
+            newStudent.password = '';
             return newStudent;
         } catch (error) {
-            console.log("Error saving document: ",error);
+            
             throw error
         }
     }
 
     async findStudent(email: string): Promise<StudentDocument|null> {
         try {
-            return await StudentModel.findOne({email:email});
+            return await StudentModel.findOne({email:email})
+            .populate('classrooms');
            
         } catch (error) {
             throw error
