@@ -10,12 +10,16 @@ import { I_Mailer } from "../../interface/service_interface/I_mailer";
 import { generateSecureOTP } from "../../utils/randomGenerator";
 import { OTPexpirationTime } from "../../infrastructure/constants/appConstants";
 import { StudentDocument } from "../../infrastructure/model/student.model";
-import { threadId } from "worker_threads";
-import { I_JWT } from "../../interface/service_interface/I_jwt";
+import { I_JWT, UserJwtPayload } from "../../interface/service_interface/I_jwt";
 import { CostumeError } from "../../utils/costume.error";
-import { string } from "zod";
 import { GoogleLoginInputType } from "../../schema/google.login.schema";
 import { I_API } from "../../interface/service_interface/I_API.requests";
+import { I_S3Bucket } from "../../interface/service_interface/I_S3.bucket";
+import { JwtPayload } from "jsonwebtoken";
+import { I_Sharp } from "../../interface/service_interface/I_sharp";
+import { AWS_S3_BUCKET_NAME } from "../../infrastructure/constants/env";
+import { I_TeacherRepo } from "../../interface/teacher_interface/I_teacher.repo";
+import { TeacherDocument } from "../../infrastructure/model/teacher.model";
 
 
 
@@ -23,26 +27,35 @@ export class StudentInteractor implements I_StudentInteractor{
 
     
     private repository: I_StudentRepo;
+    private teacherRepo:I_TeacherRepo
     private hashPassword: I_Bcrypt;
     private verificationRepository: I_StudentVerificationRepo;
     private mailer: I_Mailer
     private jwt:I_JWT
     private api:I_API
+    private s3Bucket:I_S3Bucket
+    private sharp:I_Sharp
 
     constructor(
         repository: I_StudentRepo,
+        teacherRepo:I_TeacherRepo,
         verificationRepository:I_StudentVerificationRepo,
         hashPassword:I_Bcrypt,
         mailer: I_Mailer,
         jwt:I_JWT,
-        api:I_API
+        api:I_API,
+        s3Bucket:I_S3Bucket,
+        sharp:I_Sharp
     ){
         this.repository = repository;
+        this.teacherRepo = teacherRepo;
         this.hashPassword = hashPassword;
         this.verificationRepository = verificationRepository
         this.mailer = mailer;
         this.jwt = jwt;
         this.api = api;
+        this.s3Bucket = s3Bucket
+        this.sharp = sharp
     }
     
     
@@ -52,7 +65,8 @@ export class StudentInteractor implements I_StudentInteractor{
         try {
             
             const studentExist = await this.repository.findStudent(data.email);
-            if(studentExist){
+            const teacherExist = await this.teacherRepo.findTeacher(data.email)
+            if(studentExist || teacherExist){
                 throw new CostumeError(409,"This user already exist")
             }
             const hashPassword = await this.hashPassword.encryptPassword(data.password as string);
@@ -208,11 +222,12 @@ export class StudentInteractor implements I_StudentInteractor{
                 const userProfile= await this.api.getUserProfileFromGoogle(data)
                 
                 let existingStudent = await this.repository.findStudent(userProfile.email);
-                
+                let existingTeacher = await this.teacherRepo.findTeacher(userProfile.email);
+                if(existingTeacher) throw new CostumeError(403,"This is an admin account! choose a different one for student!")
                 if(!existingStudent){
 
                     const newStudent =  Student.newStudent(
-                        userProfile.name,
+                        userProfile.name, 
                         userProfile.email,
                         null,
                         false,
@@ -241,7 +256,7 @@ export class StudentInteractor implements I_StudentInteractor{
                     sessionId : session._id
                 },"1d");
 
-                console.log('exosting form google lohin: ',existingStudent)
+                
                 existingStudent.password = ''
                 return {
                     accessToken,
@@ -250,6 +265,41 @@ export class StudentInteractor implements I_StudentInteractor{
                 }
             } catch (error) {
                 throw error
+            }
+        }
+
+        async uploadProfileImage(user:JwtPayload|null,file:Express.Multer.File):Promise<StudentDocument|null>{
+          try {
+       
+            
+            if(!file)  throw new CostumeError(404,'Profile image is missing');
+
+            
+            const imageName = `image-${user!.userId}`
+            const imageUrl = `https://${AWS_S3_BUCKET_NAME}.s3.amazonaws.com/profile_images/${imageName}`
+            const contentType = file.mimetype
+            
+            const resizedImage = await this.sharp.resizeImage(file.buffer)
+
+            await this.s3Bucket.uploadProfileImage(imageName,resizedImage,contentType);
+
+
+            const data = await this.repository.saveProfileImage(user!.userId,imageUrl);
+
+            return data;
+          } catch (error) {
+
+            throw error
+          }  
+        }
+
+        async validateStudent(user: UserJwtPayload): Promise<StudentDocument | null> {
+            try {
+                const student = this.repository.findStudentById(user.userId);
+                if(!student) throw new CostumeError(404,"Can not find your account")
+                return student
+            } catch (error) {
+                throw error;
             }
         }
     }

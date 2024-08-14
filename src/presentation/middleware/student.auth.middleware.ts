@@ -3,6 +3,7 @@ import { I_AuthMiddlewareInteractor } from "../../interface/I_auth.middleware.in
 import { accessTokenExpirationTime } from "../../infrastructure/constants/appConstants";
 import { CostumeError } from "../../utils/costume.error";
 import { CostumeRequest } from "../../interface/I_express.request";
+import { UserJwtPayload } from "../../interface/service_interface/I_jwt";
 
 interface authReqInput{
     studentAccessToken:string,
@@ -25,7 +26,8 @@ export class StudentAuthMiddleware{
                 const decryptedAccessToken = this.authInteractor.decryptToken(studentAccessToken);
 
                 if (decryptedAccessToken.message == 'Authenticated'){
-                    req.user = decryptedAccessToken.payload;
+                    req.user = decryptedAccessToken.payload as UserJwtPayload;
+            
                     return next();
                 } 
 
@@ -35,7 +37,8 @@ export class StudentAuthMiddleware{
                 const decryptedRefreshToken = this.authInteractor.decryptToken(studentRefreshToken);
                 
                 if (decryptedRefreshToken.payload) {
-                    const activeSession = await this.authInteractor.validateSession(decryptedRefreshToken.payload.sessionId);
+                    const userPayload = decryptedRefreshToken.payload as UserJwtPayload;
+                    const activeSession = await this.authInteractor.validateSession(userPayload.sessionId!);
                     
                     if (activeSession) {
 
@@ -48,7 +51,7 @@ export class StudentAuthMiddleware{
                             maxAge: accessTokenExpirationTime,
                             httpOnly: true
                         });
-
+                 
                         return next();
                     }
                 }

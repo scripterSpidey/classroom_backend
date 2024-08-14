@@ -1,6 +1,6 @@
 import { Teacher } from "../../domain/entities/teacher";
 import { I_TeacherRepo } from "../../interface/teacher_interface/I_teacher.repo";
-import { TeacherDocument, TeacherModel } from "../model/teacher.model";
+import { TeacherClassroomDocType, TeacherDocument, TeacherModel } from "../model/teacher.model";
 import { VerificationModel } from "../model/verification.model";
 import { I_VerificationDocument } from "../../interface/student_interface/I_student.verification";
 import { SessionDocument, SessionModel } from "../model/session.model";
@@ -17,9 +17,21 @@ export class TeacherRepo implements I_TeacherRepo{
         }
     }
 
+    async saveNewClassroomToTeaherDoc(classTeacherId:string,classroomDoc:TeacherClassroomDocType):Promise<void>{
+        try {
+            await TeacherModel.updateOne(
+                { _id: classTeacherId },
+                { $addToSet: { classrooms: classroomDoc } }
+            )
+            return
+        } catch (error) {
+            throw error;
+        }
+    }
+    
     async findTeacher(email: string): Promise<TeacherDocument | null> {
         try {
-            return await TeacherModel.findOne({email}).populate('classrooms');
+            return await TeacherModel.findOne({email})
         } catch (error) {
             throw error
         }
@@ -85,4 +97,26 @@ export class TeacherRepo implements I_TeacherRepo{
             throw error
         }
     }
+
+    async saveProfileImage(userId: string, imageName: string): Promise<TeacherDocument | null> {
+        try {
+            return await TeacherModel.findByIdAndUpdate(
+                userId,
+                { profile_image: imageName },
+                { new: true }
+            ).select('-password');
+
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async findTeacherById(user_id:string):Promise<TeacherDocument|null>{
+        try {
+            return await TeacherModel.findById(user_id)
+        } catch (error) {
+            throw error
+        }
+    }
+    
 }

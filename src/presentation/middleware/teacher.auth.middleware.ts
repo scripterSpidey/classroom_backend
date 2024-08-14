@@ -3,6 +3,7 @@ import { I_AuthMiddlewareInteractor } from "../../interface/I_auth.middleware.in
 import { accessTokenExpirationTime } from "../../infrastructure/constants/appConstants";
 import { CostumeError } from "../../utils/costume.error";
 import { CostumeRequest } from "../../interface/I_express.request";
+import { UserJwtPayload } from "../../interface/service_interface/I_jwt";
 
 
 interface authReqInput {
@@ -25,7 +26,8 @@ export class TeacherAuthMiddleware {
                 const decryptedAccessToken = this.authInteractor.decryptToken(teacherAccessToken);
 
                 if (decryptedAccessToken.message == 'Authenticated'){
-                    req.user = decryptedAccessToken.payload;
+                    const userPayload = decryptedAccessToken.payload as UserJwtPayload
+                    req.user = userPayload;
                     return next();
                 } 
  
@@ -35,12 +37,13 @@ export class TeacherAuthMiddleware {
                 const decryptedRefreshToken = this.authInteractor.decryptToken(teacherRefreshToken);
                 
                 if (decryptedRefreshToken.payload) {
-                    const activeSession = await this.authInteractor.validateSession(decryptedRefreshToken.payload.sessionId);
+                    const userPayload = decryptedRefreshToken.payload as UserJwtPayload
+                    const activeSession = await this.authInteractor.validateSession(userPayload.sessionId!);
                     
                     if (activeSession) {
-
+                        
                         const newAccessToken = await this.authInteractor.newAccessToken(decryptedRefreshToken.payload.sessionId);
-                        req.user = decryptedRefreshToken.payload
+                        req.user = userPayload
                         res.cookie("teacherAccessToken", newAccessToken, {
                             maxAge: accessTokenExpirationTime,
                             httpOnly: true

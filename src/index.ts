@@ -6,19 +6,19 @@ import { connectToDB } from "./infrastructure/config/mongoDB";
 import { PORT } from "./infrastructure/constants/env";
 import { API_ORIGIN } from "./infrastructure/constants/env";
 import cors from "cors"
-import morgan from 'morgan'; // Import Morgan
+import morgan from 'morgan';
 import cookieParser from "cookie-parser";
 import errorHandler from "./presentation/middleware/error.handler";
 
-import adminRouter from "./routes/admin.routes";
-import studentRouter from "./routes/student.routes";
-import teacherRouter from "./routes/teacher.routes";
+import adminRouter from "./presentation/routes/admin.routes";
+import studentRouter from "./presentation/routes/student.routes";
+import teacherRouter from "./presentation/routes/teacher.routes";
+import { app,server } from "./application/socket/socket";
 
 const startServer = async(): Promise<void>=>{
     
-    await connectToDB();
 
-    const app = express();
+    await connectToDB();
 
     app.use(morgan('dev'))
 
@@ -30,13 +30,24 @@ const startServer = async(): Promise<void>=>{
             credentials:true
         })
     )
-    app.use(cookieParser())
+    app.use(cookieParser());
+
+
+
+
+    //test req checker...........
+    app.use((req,res,next,)=>{
+        // console.log('headers: ',req.headers)
+        console.log('request: ',req.body);
+        next()
+    });
+
     app.use('/admin',adminRouter);
     app.use('/teacher',teacherRouter);
     app.use('/student',studentRouter);
     
     app.use(errorHandler)
-    app.listen(PORT,()=>{
+    server.listen(PORT,()=>{
         console.log(`server active on port:${PORT}`)
     }) 
 

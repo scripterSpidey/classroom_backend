@@ -99,7 +99,7 @@ export class TeacherController{
             const data = req.body;
 
             const registerResponse = await this.interactor.googleLogin(data);
-            console.log(registerResponse)
+        
             res.cookie("teacherAccessToken",registerResponse.accessToken,{
                 maxAge:accessTokenExpirationTime,
                 httpOnly: true,
@@ -116,13 +116,25 @@ export class TeacherController{
         }
     }
 
-    
-
-
-    onAuthRoute(req:CostumeRequest,res:Response,next:NextFunction){
+    async onProfielImageUpload(req:CostumeRequest,res:Response,next:NextFunction){
+        
         const user = req.user;
-        console.log('user',user)
-        res.status(201).json(user)
+        
+        const file = req.file;
+        try {
+            const response = await this.interactor.uploadProfileImage(user,file!);
+            res.status(200).json(response)
+        } catch (error) {
+            next(error)
+        }
     }
+
+
+    async onAuthRoute(req:CostumeRequest,res:Response,next:NextFunction){
+        const user = req.user;
+        const teacher = await this.interactor.validateTeacher(user!)
+      
+        res.status(201).json(teacher)
+    } 
 
 }   

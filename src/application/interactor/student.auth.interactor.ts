@@ -30,6 +30,7 @@ export class StudentAuthInteractor implements I_AuthMiddlewareInteractor{
     async newAccessToken(sessionId: string):Promise< String> {
 
         try {
+            
             const session = await  this.repository.findSession(sessionId);
 
             const accessToken = this.jwt.generateToken({

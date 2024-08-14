@@ -1,6 +1,7 @@
+import { ObjectId } from "mongodb";
 import { Teacher } from "../../domain/entities/teacher";
 import { SessionDocument } from "../../infrastructure/model/session.model";
-import { TeacherDocument } from "../../infrastructure/model/teacher.model";
+import { TeacherClassroomDocType, TeacherDocument } from "../../infrastructure/model/teacher.model";
 import { I_VerificationDocument } from "../student_interface/I_student.verification";
 
 export interface I_TeacherRepo{
@@ -19,4 +20,10 @@ export interface I_TeacherRepo{
     endSession(userId:string,endTime:Date):Promise<void>;
 
     createVerificationDocument(data:any):Promise<any>;
+
+    saveProfileImage(userId:string,imageName:string):Promise<TeacherDocument|null>;
+
+    findTeacherById(user_id:string|ObjectId):Promise<TeacherDocument|null>;
+
+    saveNewClassroomToTeaherDoc(classTeacherId:string,classroomDoc:TeacherClassroomDocType):Promise<void>;
 }
