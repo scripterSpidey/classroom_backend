@@ -2,7 +2,7 @@
 import { CreateClassroomInputType } from "../../schema/create.classroom.schema";
 import { I_UniqueIDGenerator } from "../../interface/service_interface/I_Unique.id";
 
-import { ClassroomDocument, ClassroomMessage } from "../../infrastructure/model/classroom.model";
+import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage, MaterialType } from "../../infrastructure/model/classroom.model";
 
 import { CostumeError } from "../../utils/costume.error";
 import { I_TeacherClassroomInteractor } from "../../interface/classroom_interface/I_teacher.classroom.interactor";
@@ -20,9 +20,13 @@ import { ObjectId } from "mongodb";
 import { I_SocketServices } from "../../interface/service_interface/I_Socket";
 import { ChatType, PrivateChatDocument, RoleType } from "../../infrastructure/model/private.chat.model";
 
-import { SendPrivateMessageBodyType,SendPrivateMessageParamsType } from "../../schema/send.private.message.schema";
+import { SendPrivateMessageBodyType, SendPrivateMessageParamsType } from "../../schema/send.private.message.schema";
 import { getReceiverSocketId } from "../socket/socket";
 import crypto from 'crypto'
+import { I_S3Bucket } from "../../interface/service_interface/I_S3.bucket";
+import { AWS_S3_BUCKET_NAME } from "../../infrastructure/constants/env";
+import { DeleteMaterialQueryType, UploadMaterialBodyType } from "../../schema/upload.material.schema";
+import { throwDeprecation } from "process";
 
 
 export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor {
@@ -33,19 +37,22 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
     private uniqueIdGenerator: I_UniqueIDGenerator;
     private jwt: I_JWT;
     private socketServices: I_SocketServices;
+    private s3Bucket: I_S3Bucket
 
     constructor(teacherClassroomRepo: I_TeacherClassroomRepo,
         studentRepo: I_StudentRepo,
         teacherRepo: I_TeacherRepo,
         uniqueIdGenerator: I_UniqueIDGenerator,
         jwt: I_JWT,
-        socketServices: I_SocketServices) {
+        socketServices: I_SocketServices,
+        s3Bucket: I_S3Bucket) {
         this.teacherClassroomRepo = teacherClassroomRepo
         this.studentRepo = studentRepo;
         this.teacherRepo = teacherRepo;
         this.uniqueIdGenerator = uniqueIdGenerator;
         this.jwt = jwt;
         this.socketServices = socketServices;
+        this.s3Bucket = s3Bucket
     }
 
 
@@ -239,8 +246,8 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
             }
 
             const savedMessage = await this.teacherClassroomRepo.saveClassroomMessage(classroom.classroom_id, message);
-            
-            this.socketServices.emitClassroomMessage(classroom.classroom_id,savedMessage)
+
+            this.socketServices.emitClassroomMessage(classroom.classroom_id, savedMessage)
             // io.to(classroom.classroom_id).emit('classroomMessage', savedMessage)
 
             return
@@ -249,41 +256,90 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
         }
     }
 
-    async sendPrivateMessage(user: UserJwtPayload, classroom: ClassroomJwtPayload, body: SendPrivateMessageBodyType,receiver:SendPrivateMessageParamsType): Promise<void> {
+    async sendPrivateMessage(user: UserJwtPayload, classroom: ClassroomJwtPayload, body: SendPrivateMessageBodyType, receiver: SendPrivateMessageParamsType): Promise<void> {
         try {
             const teacher = await this.teacherRepo.findTeacherById(user.userId);
-           
-            if(!teacher) throw new CostumeError(401,"Teacher can not be found")
-            const data:PrivateChatDocument ={
-                classroom_id:new ObjectId(classroom.classroom_id),
+
+            if (!teacher) throw new CostumeError(401, "Teacher can not be found")
+            const data: PrivateChatDocument = {
+                classroom_id: new ObjectId(classroom.classroom_id),
                 sender_id: new ObjectId(user.userId),
-                sender_name:teacher.name,
-                receiver_name:body.receiverName,
-                receiver_id:new ObjectId(receiver.receiverId),
-                message:body.message,
-                type:ChatType.TEXT,
-                sender_role:RoleType.TEACHER,
-                read:false
+                sender_name: teacher.name,
+                receiver_name: body.receiverName,
+                receiver_id: new ObjectId(receiver.receiverId),
+                message: body.message,
+                type: ChatType.TEXT,
+                sender_role: RoleType.TEACHER,
+                read: false
             }
             const savedMessage = await this.teacherClassroomRepo.savePrivateMessage(data);
 
-            const id = [user.userId,receiver.receiverId,classroom.classroom_id].sort().join('-');
-            const chatroomId = crypto.createHash('sha256').update(id).digest('hex').substring(0,16);
-            
-            this.socketServices.emitPrivateMessage(chatroomId,savedMessage)
-            return 
+            const id = [user.userId, receiver.receiverId, classroom.classroom_id].sort().join('-');
+            const chatroomId = crypto.createHash('sha256').update(id).digest('hex').substring(0, 16);
+
+            this.socketServices.emitPrivateMessage(chatroomId, savedMessage)
+            return
         } catch (error) {
             throw error
         }
     }
 
-    async getPrivateMessages(teacher:UserJwtPayload,receiver:SendPrivateMessageParamsType,classroom:ClassroomJwtPayload): Promise<PrivateChatDocument[]> {
+    async getPrivateMessages(teacher: UserJwtPayload, receiver: SendPrivateMessageParamsType, classroom: ClassroomJwtPayload): Promise<PrivateChatDocument[]> {
         try {
-            const messages = await  this.teacherClassroomRepo.fetchPrivateMessages(String(teacher.userId),receiver.receiverId,classroom.classroom_id);
-            console.log('private messages: ',messages)
+            const messages = await this.teacherClassroomRepo.fetchPrivateMessages(String(teacher.userId), receiver.receiverId, classroom.classroom_id);
+            console.log('private messages: ', messages)
             return messages
         } catch (error) {
             throw error
+        }
+    }
+
+    async uploadMaterial(user: UserJwtPayload, clasroom: ClassroomJwtPayload, data: UploadMaterialBodyType, file: Express.Multer.File): Promise<ClassroomMaterialType> {
+        try {
+            if (!file) throw new CostumeError(400, 'Material is required!');
+
+            const materialId = this.uniqueIdGenerator.generateMaterialId();
+            
+            const fileName = `material-${clasroom?.classroom_id}-${materialId}`;
+            const fileUrl = `https://${AWS_S3_BUCKET_NAME}.s3.amazonaws.com/materials/${fileName}`;
+
+            await this.s3Bucket.uploadClassroomMaterial(fileName,file.buffer,file.mimetype);
+
+            const materialDoc:ClassroomMaterialType= {
+                title: data.title,
+                description: data.description,
+                type: MaterialType.PDF,
+                url: fileUrl,
+                created_at: new Date()
+            }
+            
+            const material = await this.teacherClassroomRepo.saveClassroomMaterial(clasroom.classroom_id,materialDoc);
+
+            if(!material) throw new CostumeError(503,"Failed to upload material. Please try again later!");
+
+            return material
+          
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getMaterials(user: UserJwtPayload, classroom: ClassroomJwtPayload): Promise<ClassroomMaterialType[] | null> {
+        try {
+            const materials = await this.teacherClassroomRepo.fetchClassroomMaterials(classroom.classroom_id,user.userId as string);
+            console.log(materials)
+            return materials;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async deleteMaterial(user: UserJwtPayload, clasroom: ClassroomJwtPayload,material:DeleteMaterialQueryType): Promise<void> {
+        try {
+            
+            await this.teacherClassroomRepo.deleteClassroomMaterial(clasroom.classroom_id,material.materialId)
+        } catch (error) {
+            throw error;
         }
     }
 

@@ -5,6 +5,7 @@ import { CostumeRequest } from "../../interface/I_express.request";
 import { saveMessageInput } from "../../schema/saveMessageSchema";
 import { SendPrivateMessageBodyType, SendPrivateMessageParamsType } from "../../schema/send.private.message.schema";
 import { ClassroomJwtPayload } from "../middleware/classroom.auth.middleware";
+import { UploadMaterialBodyType } from "../../schema/upload.material.schema";
 
 export class StudentClassroomGateway {
     private interactor: I_StudentClassroomInteractor;
@@ -123,4 +124,20 @@ export class StudentClassroomGateway {
             next(error)
         }
     }
+
+
+
+    async onGetMaterials(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const user = req.user;
+            const classroom = req.classroom;
+            const response = await this.interactor.getMaterials(user!,classroom!)
+            
+            res.status(201).json(response)
+        } catch (error) {
+            next(error)
+        }
+    }
+
+  
 }

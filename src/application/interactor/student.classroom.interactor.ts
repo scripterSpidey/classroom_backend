@@ -1,6 +1,6 @@
 import { I_StudentClassroomInteractor } from "../../interface/classroom_interface/I_student.classroom.interactor";
 import { I_StudentClassroomRepo } from "../../interface/classroom_interface/I_student.classroom.repo";
-import { ClassroomDocument, ClassroomMessage } from "../../infrastructure/model/classroom.model";
+import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage } from "../../infrastructure/model/classroom.model";
 import { CostumeError } from "../../utils/costume.error";
 import { ClassroomJwtPayload } from "../../interface/I_classroom.auth.interactor";
 import { I_JWT, UserJwtPayload } from "../../interface/service_interface/I_jwt";
@@ -174,6 +174,16 @@ export class StudentClassroomInteractor implements I_StudentClassroomInteractor 
             return messages
         } catch (error) {
             throw error
+        }
+    }
+
+    async getMaterials(user: UserJwtPayload, classroom: ClassroomJwtPayload): Promise<ClassroomMaterialType[] | null> {
+        try {
+            const materials = await this.classroomRepo.fetchClassroomMaterials(classroom.classroom_id,user.userId as string);
+            console.log(materials)
+            return materials;
+        } catch (error) {
+            throw error;
         }
     }
 

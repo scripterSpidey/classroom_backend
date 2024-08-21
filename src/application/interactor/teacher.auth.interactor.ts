@@ -34,8 +34,9 @@ export class TeacherAuthInteractor implements I_AuthMiddlewareInteractor{
 
             const accessToken = this.jwt.generateToken({
                 userId:session?.userId,
-                sessionId:session?._id
-            },'2m')
+                sessionId:session?._id,
+                role:session.role
+            },'1h')
 
             return accessToken
         } catch (error) {

@@ -7,6 +7,8 @@ import { studentIdParamType } from "../../schema/remove.student.schema";
 import { saveMessageInput } from "../../schema/saveMessageSchema";
 import { SendPrivateMessageBodyType,SendPrivateMessageParamsType } from "../../schema/send.private.message.schema";
 import { ClassroomJwtPayload } from "../middleware/classroom.auth.middleware";
+import { DeleteMaterialQueryType, UploadMaterialBodyType } from "../../schema/upload.material.schema";
+import { UserJwtPayload } from "../../interface/service_interface/I_jwt";
 
 
 
@@ -178,5 +180,46 @@ export class TeacherClassroomGateway {
             next(error)
         }
     }
+
+
+    async onMaterilalUpload(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const user = req.user;
+            const file = req.file;
+            const clasroom =  req.classroom;
+            const body = req.body as UploadMaterialBodyType;
+        
+            const response = await this.interactor.uploadMaterial(user!,clasroom!,body,file);
+           
+            res.status(201).json(response)
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    async onGetMaterials(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const user = req.user;
+            const classroom = req.classroom;
+            const response = await this.interactor.getMaterials(user!,classroom!)
+            
+            res.status(201).json(response)
+        } catch (error) {
+            next(error)
+        }
+    }
+    
+    async onDeleteMaterial(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const user = req.user as UserJwtPayload;
+            const classroom = req.classroom as ClassroomJwtPayload;
+            const query = req.query as DeleteMaterialQueryType;
+            await this.interactor.deleteMaterial(user,classroom,query)
+            res.status(201).json('response')
+        } catch (error) {
+            next(error)
+        }
+    }
+    
 
 }

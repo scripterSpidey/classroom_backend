@@ -131,11 +131,13 @@ export class StudentInteractor implements I_StudentInteractor{
                     })
                     const accessToken = this.jwt.generateToken({
                         sessionId:session._id,
-                        userId:verifiedStudent._id
+                        userId:verifiedStudent._id,
+                        role:'student'
                     },"1h");
 
                     const refreshToken = this.jwt.generateToken({
-                        sessionId : session._id
+                        sessionId : session._id,
+                        role:'student'
                     },"1d");
                     return {
                         accessToken,
@@ -170,11 +172,13 @@ export class StudentInteractor implements I_StudentInteractor{
 
                     const accessToken = this.jwt.generateToken({
                         userId:student._id,
-                        sessionId:session._id
+                        sessionId:session._id,
+                        role:'student'
                     },"1m");
 
                     const refreshToken = this.jwt.generateToken({
-                        sessionId : session._id
+                        sessionId : session._id,
+                        role:'student'
                     },"1d");
                     student.password = ''
                     return {
@@ -249,11 +253,13 @@ export class StudentInteractor implements I_StudentInteractor{
 
                 const accessToken = this.jwt.generateToken({
                     userId:existingStudent?._id,
-                    sessionId:session._id
-                },"1m");
+                    sessionId:session._id,
+                    role:'student'
+                },"1h");
 
                 const refreshToken = this.jwt.generateToken({
-                    sessionId : session._id
+                    sessionId : session._id,
+                    role:'student'
                 },"1d");
 
                 

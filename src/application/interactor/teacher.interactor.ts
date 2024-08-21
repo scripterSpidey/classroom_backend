@@ -132,13 +132,15 @@ export class TeacherInteractor implements I_TeacherInteractor {
 
             const accessToken = this.jwt.generateToken({
                 sessionId: session._id,
-                userId: data.userId
+                userId: data.userId,
+                role:'teacher'
             }, "1h");
 
 
             const refreshToken = this.jwt.generateToken({
                 sessionId: session._id,
-                userId: data.userId
+                userId: data.userId,
+                role:'teacher'
             }, "1d");
 
             return {
@@ -172,12 +174,14 @@ export class TeacherInteractor implements I_TeacherInteractor {
 
                 const accessToken = this.jwt.generateToken({
                     userId: teacher._id,
-                    sessionId: session._id
+                    sessionId: session._id,
+                    role:'teacher'
                 }, "2m");
 
                 const refreshToken = this.jwt.generateToken({
                     userId: teacher._id,
-                    sessionId: session._id
+                    sessionId: session._id,
+                    role:'teacher'
                 }, "1d");
                 teacher.password = ''
                 return {
@@ -237,12 +241,14 @@ export class TeacherInteractor implements I_TeacherInteractor {
 
             const accessToken = this.jwt.generateToken({
                 userId: existingTeacher?._id,
-                sessionId: session._id
-            }, "1m");
+                sessionId: session._id,
+                role:'teacher'
+            }, "30m");
 
             const refreshToken = this.jwt.generateToken({
                 userId: existingTeacher?._id,
-                sessionId: session._id
+                sessionId: session._id,
+                role:'teacher'
             }, "1d");
          
             return {
@@ -264,8 +270,9 @@ export class TeacherInteractor implements I_TeacherInteractor {
           
           const imageName = `image-${user!.userId}`
           const imageUrl = `https://${AWS_S3_BUCKET_NAME}.s3.amazonaws.com/profile_images/${imageName}`
-          const contentType = file.mimetype
           
+          const contentType = file.mimetype
+         
           const resizedImage = await this.sharp.resizeImage(file.buffer)
 
           await this.s3Bucket.uploadProfileImage(imageName,resizedImage,contentType);

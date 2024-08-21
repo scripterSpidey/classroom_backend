@@ -1,8 +1,8 @@
-import { ClassroomDocument, ClassroomMessage, ClassroomModel } from "../model/classroom.model";
+import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage, ClassroomModel } from "../model/classroom.model";
 import { StudentDocument, StudentModel } from "../model/student.model";
 import { I_StudentClassroomRepo } from "../../interface/classroom_interface/I_student.classroom.repo";
 import { ObjectId } from "mongodb";
-import { Aggregate } from "mongoose";
+import mongoose, { Aggregate } from "mongoose";
 import { CostumeError } from "../../utils/costume.error";
 import { PrivateChatDocument, PrivateChatModel } from "../model/private.chat.model";
 
@@ -116,6 +116,24 @@ export class StudentClassroomRepo implements I_StudentClassroomRepo {
                 {sender_id:receiverId,receiver_id:senderId,classroom_id:classroomId}
             ]}
         ).sort({createdAt:1})
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async fetchClassroomMaterials(classroomId: string, studentId: string): Promise<ClassroomMaterialType[] | null> {
+        try {
+         
+
+            const materials = await ClassroomModel.aggregate([
+                {$match:{_id:new mongoose.Types.ObjectId(classroomId)}},
+                {$project:{materials:1}},
+                {$unwind:"$materials"},
+                {$sort:{"materials.created_at":-1}},
+                {$group:{_id:"$_id",materials:{$push:"$materials"}}}
+            ]);
+      
+            return materials[0]?.materials as ClassroomMaterialType[];
         } catch (error) {
             throw error
         }

@@ -13,6 +13,8 @@ import { ClasroomAuthInteractor } from "../../application/interactor/classroom.a
 import { SocketServices } from "../../application/service/socket.service";
 import { sendPrivateMessage } from "../../schema/send.private.message.schema";
 
+
+
 const studentClassroomRepo = new StudentClassroomRepo();
 const studentRepo = new StudentRepo()
 const teacherClassroomRepo = new TeacherClassroomRepo();
@@ -68,5 +70,9 @@ router.route('/chat/:receiverId')
     .get(studentClassroomGateway.onGetPrivateMessages.bind(studentClassroomGateway) as RequestHandler)
     .post(validate(sendPrivateMessage),
         studentClassroomGateway.onSendPrivateMessage.bind(studentClassroomGateway) as RequestHandler)
+
+router.route('/materials')
+    .get(studentClassroomGateway.onGetMaterials.bind(studentClassroomGateway) as RequestHandler)
+
 
 export default router;

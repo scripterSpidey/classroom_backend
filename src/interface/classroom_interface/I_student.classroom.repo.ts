@@ -1,4 +1,4 @@
-import { ClassroomDocument, ClassroomMessage } from "../../infrastructure/model/classroom.model";
+import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage } from "../../infrastructure/model/classroom.model";
 import { PrivateChatDocument } from "../../infrastructure/model/private.chat.model";
 import { StudentDocument } from "../../infrastructure/model/student.model";
 
@@ -15,4 +15,5 @@ export interface I_StudentClassroomRepo {
 
     fetchPrivateMessages(senderId:string,receiverId:string,classroomId:string):Promise<PrivateChatDocument[]>
     
+    fetchClassroomMaterials(classroomId:string,classTeacherId:string,):Promise<ClassroomMaterialType[]|null>
 }

@@ -3,9 +3,10 @@ import { Types } from "mongoose";
 import { JWToutput } from "../../application/service/jwt";
 
 
-export interface UserJwtPayload {
+export interface UserJwtPayload extends JwtPayload {
     userId:string | Types.ObjectId
-    sessionId?:string
+    sessionId?:string,
+    role?:string
 }
 
 export interface ClassroomJwtPayload extends JwtPayload{

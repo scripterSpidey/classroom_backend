@@ -1,5 +1,10 @@
 import mongoose, { Schema, Model, ObjectId } from "mongoose";
+import { string } from "zod";
 
+export enum MaterialType{
+    PDF = 'pdf',
+    LINK = 'link'
+}
 
 export interface ClassroomDocument extends mongoose.Document {
     _id: ObjectId,
@@ -24,9 +29,17 @@ export interface ClassroomDocument extends mongoose.Document {
     joining_requests: mongoose.Types.ObjectId[],
     banned: boolean,
     classroom_id: string,
-    createdAt: Date
+    createdAt: Date,
+    materials:Array<{
+        title:string,
+        description:string,
+        type:MaterialType,
+        url:string,
+        created_at:Date,
+    }>
 };
 
+export type ClassroomMaterialType = ClassroomDocument['materials'][number]
 export type ClassroomMessage = ClassroomDocument["classroom_messages"][number];
 
 const classroomSchema: mongoose.Schema = new mongoose.Schema<ClassroomDocument>({
@@ -97,6 +110,28 @@ const classroomSchema: mongoose.Schema = new mongoose.Schema<ClassroomDocument>(
             type: Date,
             default: new Date(),
             required: true
+        }
+    }],
+    materials:[{
+        title:{
+            type:String,
+            rqeuired:true
+        },
+        description:{
+            type:String,
+            required:true
+        },
+        type:{
+            type:String,
+            enum:['pdf','links'],
+        },
+        url:{
+            type:String,
+            required:true
+        },
+        created_at:{
+            type:Date,
+            required:true
         }
     }],
     joining_requests: [{

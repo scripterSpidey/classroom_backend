@@ -26,7 +26,10 @@ export class TeacherAuthMiddleware {
                 const decryptedAccessToken = this.authInteractor.decryptToken(teacherAccessToken);
 
                 if (decryptedAccessToken.message == 'Authenticated'){
-                    const userPayload = decryptedAccessToken.payload as UserJwtPayload
+                    const userPayload = decryptedAccessToken.payload as UserJwtPayload;
+                    console.log('payload: ',userPayload)
+                    if(userPayload.role!='teacher') throw new CostumeError(401,'Invalid credentials');
+
                     req.user = userPayload;
                     return next();
                 } 
@@ -37,7 +40,10 @@ export class TeacherAuthMiddleware {
                 const decryptedRefreshToken = this.authInteractor.decryptToken(teacherRefreshToken);
                 
                 if (decryptedRefreshToken.payload) {
-                    const userPayload = decryptedRefreshToken.payload as UserJwtPayload
+                    const userPayload = decryptedRefreshToken.payload as UserJwtPayload;
+
+                    if(decryptedRefreshToken.payload.role!='teacher') throw new CostumeError(401,'Invalid credentials');
+
                     const activeSession = await this.authInteractor.validateSession(userPayload.sessionId!);
                     
                     if (activeSession) {

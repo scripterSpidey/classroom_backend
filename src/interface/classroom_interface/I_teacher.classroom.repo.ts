@@ -1,4 +1,4 @@
-import { ClassroomDocument, ClassroomMessage } from "../../infrastructure/model/classroom.model";
+import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage } from "../../infrastructure/model/classroom.model";
 import { PrivateChatDocument } from "../../infrastructure/model/private.chat.model";
 import { StudentClassroomDocType, StudentDocument } from "../../infrastructure/model/student.model";
 import { TeacherClassroomDocType } from "../../infrastructure/model/teacher.model";
@@ -28,6 +28,11 @@ export interface I_TeacherClassroomRepo{
 
     savePrivateMessage(data:PrivateChatDocument):Promise<PrivateChatDocument>;
 
-    fetchPrivateMessages(senderId:string,receiverId:string,classroomId:string):Promise<PrivateChatDocument[]>
+    fetchPrivateMessages(senderId:string,receiverId:string,classroomId:string):Promise<PrivateChatDocument[]>;
+
+    saveClassroomMaterial(clasroomId:string,data:ClassroomMaterialType):Promise<ClassroomMaterialType|null>;
     
+    fetchClassroomMaterials(classroomId:string,classTeacherId:string,):Promise<ClassroomMaterialType[]|null>;
+
+    deleteClassroomMaterial(classroomId:string,materialId:string):Promise<void>;
 }

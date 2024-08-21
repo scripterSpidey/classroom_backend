@@ -1,8 +1,8 @@
 
 
-import { Aggregate } from "mongoose";
+import mongoose, { Aggregate } from "mongoose";
 import { I_TeacherClassroomRepo } from "../../interface/classroom_interface/I_teacher.classroom.repo";
-import { ClassroomDocument, ClassroomMessage, ClassroomModel } from "../model/classroom.model";
+import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage, ClassroomModel } from "../model/classroom.model";
 import { StudentClassroomDocType, StudentDocument, StudentModel } from "../model/student.model";
 import { TeacherClassroomDocType, TeacherModel } from "../model/teacher.model";
 import { ObjectId } from 'mongodb';
@@ -229,22 +229,65 @@ export class TeacherClassroomRepo implements I_TeacherClassroomRepo {
         }
     }
 
-    async savePrivateMessage( data: PrivateChatDocument): Promise<PrivateChatDocument> {
-        try {   
+    async savePrivateMessage(data: PrivateChatDocument): Promise<PrivateChatDocument> {
+        try {
             return await new PrivateChatModel(data).save()
         } catch (error) {
             throw error
         }
     }
 
-    async fetchPrivateMessages(senderId:string,receiverId:string,classroomId:string): Promise<PrivateChatDocument[]> {
-        try {   
+    async fetchPrivateMessages(senderId: string, receiverId: string, classroomId: string): Promise<PrivateChatDocument[]> {
+        try {
             return await PrivateChatModel.find(
-                {$or:[
-                    {sender_id:senderId,receiver_id:receiverId,classroom_id:classroomId},
-                    {sender_id:receiverId,receiver_id:senderId,classroom_id:classroomId}
-                ]}
-            ).sort({createdAt:1})
+                {
+                    $or: [
+                        { sender_id: senderId, receiver_id: receiverId, classroom_id: classroomId },
+                        { sender_id: receiverId, receiver_id: senderId, classroom_id: classroomId }
+                    ]
+                }
+            ).sort({ createdAt: 1 })
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async saveClassroomMaterial(clasroomId: string, data: ClassroomMaterialType): Promise<ClassroomMaterialType | null> {
+        try {
+            const materials = await ClassroomModel.findByIdAndUpdate(
+                clasroomId,
+                { $addToSet: { materials: data } },
+                { new: true, projection: { materials: { $slice: -1 } } }
+            );
+            if (!materials) return null;
+
+            return materials?.materials[0]
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async fetchClassroomMaterials(classroomId: string, classTeacherId: string): Promise<ClassroomMaterialType[] | null> {
+        try {
+         
+
+            const materials = await ClassroomModel.aggregate([
+                {$match:{_id:new mongoose.Types.ObjectId(classroomId)}},
+                {$project:{materials:1}},
+                {$unwind:"$materials"},
+                {$sort:{"materials.created_at":-1}},
+                {$group:{_id:"$_id",materials:{$push:"$materials"}}}
+            ]);
+      
+            return materials[0]?.materials as ClassroomMaterialType[];
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async deleteClassroomMaterial(classroomId: string,materialId:string): Promise<void> {
+        try {
+            
         } catch (error) {
             throw error
         }

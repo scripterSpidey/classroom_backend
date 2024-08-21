@@ -21,14 +21,22 @@ import { TeacherRepo } from "../../infrastructure/repositories/teacher.repo";
 import { saveMessageSchema } from "../../schema/saveMessageSchema";
 import { SocketServices } from "../../application/service/socket.service";
 import { sendPrivateMessage } from "../../schema/send.private.message.schema";
+import { deleteMaterialSchema, uploadMaterilaSchema } from "../../schema/upload.material.schema";
+import multer from "multer";
+import { AWSS3Bucket } from "../../application/service/aws.s3.bucket";
 
 const router = express.Router();
+
+
+const storage = multer.memoryStorage()
+const upload = multer({ storage });
 
 
 //services
 const uniqueIdGenerator = new UniqueIDGenerator(customAlphabet);
 const jwt = new JWT();
-const socket = new SocketServices()
+const socket = new SocketServices();
+const s3Bucket = new AWSS3Bucket()
 
 //repos
 const studentRepo = new StudentRepo();
@@ -42,7 +50,9 @@ const classroomInteractor = new TeacherClassroomInteractor(
     teacherRepo,
     uniqueIdGenerator,
     jwt,
-    socket);
+    socket,
+    s3Bucket);
+
 const classroomAuthInteractor = new ClasroomAuthInteractor(
     teacherClassroomRepo,
     studentClassroomRepo,
@@ -101,6 +111,17 @@ router.route('/chat/:receiverId')
     .get(teacherClassroomGateway.onGetPrivateMessages.bind(teacherClassroomGateway) as RequestHandler)
     .post(validate(sendPrivateMessage),
         teacherClassroomGateway.onSendPrivateMessage.bind(teacherClassroomGateway) as RequestHandler)
+
+router.route('/materials/')
+    .get(teacherClassroomGateway.onGetMaterials.bind(teacherClassroomGateway) as RequestHandler)
+    .post(upload.single('material'),
+        validate(uploadMaterilaSchema),
+        teacherClassroomGateway.onMaterilalUpload.bind(teacherClassroomGateway) as RequestHandler)
+    .delete(validate(deleteMaterialSchema),
+        teacherClassroomGateway.onDeleteMaterial.bind(teacherClassroomGateway) as RequestHandler)
+
+
+
 
 // router.route('/all')
 //     .get(
