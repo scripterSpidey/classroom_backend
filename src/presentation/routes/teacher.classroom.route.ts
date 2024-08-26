@@ -24,6 +24,8 @@ import { sendPrivateMessage } from "../../schema/send.private.message.schema";
 import { deleteMaterialSchema, uploadMaterilaSchema } from "../../schema/upload.material.schema";
 import multer from "multer";
 import { AWSS3Bucket } from "../../application/service/aws.s3.bucket";
+import { createWorkSchema, updateWorkMarkSchema } from "../../schema/work.schema";
+import { DayJS } from "../../application/service/day.js";
 
 const router = express.Router();
 
@@ -36,7 +38,8 @@ const upload = multer({ storage });
 const uniqueIdGenerator = new UniqueIDGenerator(customAlphabet);
 const jwt = new JWT();
 const socket = new SocketServices();
-const s3Bucket = new AWSS3Bucket()
+const s3Bucket = new AWSS3Bucket();
+const dayJS = new DayJS()
 
 //repos
 const studentRepo = new StudentRepo();
@@ -51,7 +54,8 @@ const classroomInteractor = new TeacherClassroomInteractor(
     uniqueIdGenerator,
     jwt,
     socket,
-    s3Bucket);
+    s3Bucket,
+    dayJS);
 
 const classroomAuthInteractor = new ClasroomAuthInteractor(
     teacherClassroomRepo,
@@ -60,23 +64,16 @@ const classroomAuthInteractor = new ClasroomAuthInteractor(
 )
 
 const classroomAuth = new ClassroomAuthMiddleware(classroomAuthInteractor)
-
 const teacherClassroomGateway = new TeacherClassroomGateway(classroomInteractor);
-
-
 
 router.route('/')
     .post(validate(createClassroomSchema),
         teacherClassroomGateway.onCreateClassroom.bind(teacherClassroomGateway) as RequestHandler)
     .get()
 
-
-
-
 router.route('/summary/:classroom_id')
     .get(
         teacherClassroomGateway.onGetTeacherClassroom.bind(teacherClassroomGateway) as RequestHandler);
-
 
 //protected routes.....................
 router.use(classroomAuth.teacherClassroomGatekeeper.bind(classroomAuth) as RequestHandler)
@@ -120,9 +117,16 @@ router.route('/materials/')
     .delete(validate(deleteMaterialSchema),
         teacherClassroomGateway.onDeleteMaterial.bind(teacherClassroomGateway) as RequestHandler)
 
+router.route('/works')
+    .get(teacherClassroomGateway.onGetAllWorks.bind(teacherClassroomGateway) as RequestHandler)
+    .post(upload.single('work'),
+        validate(createWorkSchema),
+        teacherClassroomGateway.onCreateWork.bind(teacherClassroomGateway) as RequestHandler)
 
-
-
+router.route('/work/:workId')
+    .get()
+    .patch(validate(updateWorkMarkSchema),
+        teacherClassroomGateway.onUpdateWorkMark.bind(teacherClassroomGateway) as RequestHandler)
 // router.route('/all')
 //     .get(
 //         teacherClassroomGateway.onGetTeacherAllClassrooms.bind(teacherClassroomGateway))

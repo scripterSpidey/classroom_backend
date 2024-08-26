@@ -5,6 +5,7 @@ import { ObjectId } from "mongodb";
 import mongoose, { Aggregate } from "mongoose";
 import { CostumeError } from "../../utils/costume.error";
 import { PrivateChatDocument, PrivateChatModel } from "../model/private.chat.model";
+import { WorksDocument, WorksModel, WorkSubmissionType } from "../model/works.model";
 
 export class StudentClassroomRepo implements I_StudentClassroomRepo {
 
@@ -65,11 +66,11 @@ export class StudentClassroomRepo implements I_StudentClassroomRepo {
         try {
             const chat = await ClassroomModel.findByIdAndUpdate(
                 classroom_id,
-                { $addToSet: { classroom_messages: message }},
-                { new: true,projection: { classroom_messages: { $slice: -1 } }}
+                { $addToSet: { classroom_messages: message } },
+                { new: true, projection: { classroom_messages: { $slice: -1 } } }
             )
-            if(!chat) throw new CostumeError(404,"Failed to save message")
-          
+            if (!chat) throw new CostumeError(404, "Failed to save message")
+
             return chat.classroom_messages[0]
         } catch (error) {
             throw error
@@ -93,29 +94,31 @@ export class StudentClassroomRepo implements I_StudentClassroomRepo {
 
 
             const message: Array<ClassroomDocument> = await aggregation.exec();
-            
+
             return message
         } catch (error) {
             throw error
         }
     }
 
-    async savePrivateMessage( data: PrivateChatDocument): Promise<PrivateChatDocument> {
-        try {   
+    async savePrivateMessage(data: PrivateChatDocument): Promise<PrivateChatDocument> {
+        try {
             return await new PrivateChatModel(data).save()
         } catch (error) {
             throw error
         }
     }
 
-    async fetchPrivateMessages(senderId:string,receiverId:string,classroomId:string): Promise<PrivateChatDocument[]> {
-        try {   
-           return await PrivateChatModel.find(
-            {$or:[
-                {sender_id:senderId,receiver_id:receiverId,classroom_id:classroomId},
-                {sender_id:receiverId,receiver_id:senderId,classroom_id:classroomId}
-            ]}
-        ).sort({createdAt:1})
+    async fetchPrivateMessages(senderId: string, receiverId: string, classroomId: string): Promise<PrivateChatDocument[]> {
+        try {
+            return await PrivateChatModel.find(
+                {
+                    $or: [
+                        { sender_id: senderId, receiver_id: receiverId, classroom_id: classroomId },
+                        { sender_id: receiverId, receiver_id: senderId, classroom_id: classroomId }
+                    ]
+                }
+            ).sort({ createdAt: 1 })
         } catch (error) {
             throw error
         }
@@ -123,19 +126,55 @@ export class StudentClassroomRepo implements I_StudentClassroomRepo {
 
     async fetchClassroomMaterials(classroomId: string, studentId: string): Promise<ClassroomMaterialType[] | null> {
         try {
-         
+
 
             const materials = await ClassroomModel.aggregate([
-                {$match:{_id:new mongoose.Types.ObjectId(classroomId)}},
-                {$project:{materials:1}},
-                {$unwind:"$materials"},
-                {$sort:{"materials.created_at":-1}},
-                {$group:{_id:"$_id",materials:{$push:"$materials"}}}
+                { $match: { _id: new mongoose.Types.ObjectId(classroomId) } },
+                { $project: { materials: 1 } },
+                { $unwind: "$materials" },
+                { $sort: { "materials.created_at": -1 } },
+                { $group: { _id: "$_id", materials: { $push: "$materials" } } }
             ]);
-      
+
             return materials[0]?.materials as ClassroomMaterialType[];
         } catch (error) {
             throw error
         }
     }
+
+    async fetchAllClassroomWorks(clasroomId: string): Promise<WorksDocument[] | null> {
+        try {
+            return await WorksModel.find({
+                classroom_id: clasroomId
+            }).sort({ createdAt: -1 })
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async saveSubmittedWork(classroomId: string, workId: string, work: WorkSubmissionType): Promise<WorksDocument|null> {
+        try {
+            return await WorksModel.findOneAndUpdate(
+                {
+                    _id: workId,
+                    'submissions.student_id': { $ne: work.student_id }
+                },
+                { $addToSet: { submissions: work } },
+                { new: true }
+            ).select('submissions')
+
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async findWork(workId: string): Promise<WorksDocument | null> {
+        try {
+            return await WorksModel.findById(workId)
+        } catch (error) {
+            throw error
+        }
+    }
+
+
 }

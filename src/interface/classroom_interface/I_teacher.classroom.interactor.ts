@@ -1,11 +1,13 @@
 import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage } from "../../infrastructure/model/classroom.model";
 import { PrivateChatDocument } from "../../infrastructure/model/private.chat.model";
 import { StudentDocument } from "../../infrastructure/model/student.model";
+import { WorksDocument } from "../../infrastructure/model/works.model";
 import { CreateClassroomInputType } from "../../schema/create.classroom.schema";
 import { studentIdParamType } from "../../schema/remove.student.schema";
 import { saveMessageInput } from "../../schema/saveMessageSchema";
 import { SendPrivateMessageBodyType, SendPrivateMessageParamsType } from "../../schema/send.private.message.schema";
 import { DeleteMaterialQueryType, UploadMaterialBodyType } from "../../schema/upload.material.schema";
+import { CreateWorkBodyType, UpdateWorkMarkBodyType, UpdateWorkMarkParamsType } from "../../schema/work.schema";
 import { ClassroomJwtPayload } from "../I_classroom.auth.interactor";
 import { UserJwtPayload } from "../service_interface/I_jwt";
 
@@ -49,4 +51,9 @@ export interface I_TeacherClassroomInteractor {
 
     deleteMaterial(user:UserJwtPayload,clasroom:ClassroomJwtPayload,material:DeleteMaterialQueryType):Promise<void>;
 
+    createWork(data:CreateWorkBodyType,file:Express.Multer.File,classroom:ClassroomJwtPayload):Promise<WorksDocument>;
+
+    getAllWorks(classroom:ClassroomJwtPayload):Promise<WorksDocument[]|null>;
+
+    updateWorkMark(workdId:UpdateWorkMarkParamsType,data:UpdateWorkMarkBodyType):Promise<WorksDocument|null>;
 }

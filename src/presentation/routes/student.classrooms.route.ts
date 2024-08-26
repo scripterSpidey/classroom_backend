@@ -12,7 +12,14 @@ import { TeacherClassroomRepo } from "../../infrastructure/repositories/teacher.
 import { ClasroomAuthInteractor } from "../../application/interactor/classroom.auth.interactor";
 import { SocketServices } from "../../application/service/socket.service";
 import { sendPrivateMessage } from "../../schema/send.private.message.schema";
+import multer from "multer";
+import { submitWorkSchema } from "../../schema/work.schema";
+import { UniqueIDGenerator } from "../../application/service/unique.id";
+import { customAlphabet } from "nanoid";
+import { AWSS3Bucket } from "../../application/service/aws.s3.bucket";
 
+const storage = multer.memoryStorage()
+const upload = multer({ storage });
 
 
 const studentClassroomRepo = new StudentClassroomRepo();
@@ -22,19 +29,24 @@ const teacherClassroomRepo = new TeacherClassroomRepo();
 
 const jwt = new JWT();
 const socket = new SocketServices();
+const uniqueIdGenerator = new UniqueIDGenerator(customAlphabet);
+const s3Bucket = new AWSS3Bucket();
 
 
 const studentClassroomInteractor = new StudentClassroomInteractor(
     studentClassroomRepo,
     studentRepo,
     jwt,
-    socket
+    socket,
+    uniqueIdGenerator,
+    s3Bucket
 )
 const studentClassroomGateway = new StudentClassroomGateway(studentClassroomInteractor);
 const classroomAuthInteractor = new ClasroomAuthInteractor(
     teacherClassroomRepo,
     studentClassroomRepo,
-    jwt
+    jwt,
+    
 )
 
 const classroomAuth = new ClassroomAuthMiddleware(classroomAuthInteractor)
@@ -74,5 +86,13 @@ router.route('/chat/:receiverId')
 router.route('/materials')
     .get(studentClassroomGateway.onGetMaterials.bind(studentClassroomGateway) as RequestHandler)
 
+router.route('/works')
+    .get(studentClassroomGateway.onGetAllWorks.bind(studentClassroomGateway) as RequestHandler);
+
+router.route('/work')
+    .get()
+    .post(upload.single('workSubmission'),
+        validate(submitWorkSchema),
+        studentClassroomGateway.onSubmitWork.bind(studentClassroomGateway) as RequestHandler)
 
 export default router;

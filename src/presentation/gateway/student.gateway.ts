@@ -34,6 +34,7 @@ export class StudentController {
             const { otp, userId } = req.body;
 
             const verifiedStatus = await this.interactor.verifyOTP(otp, userId);
+            
             res.cookie("studentAccessToken", verifiedStatus.accessToken, {
                 maxAge: accessTokenExpirationTime,
                 httpOnly: true

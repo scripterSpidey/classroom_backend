@@ -1,9 +1,7 @@
 
 import { CreateClassroomInputType } from "../../schema/create.classroom.schema";
 import { I_UniqueIDGenerator } from "../../interface/service_interface/I_Unique.id";
-
 import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage, MaterialType } from "../../infrastructure/model/classroom.model";
-
 import { CostumeError } from "../../utils/costume.error";
 import { I_TeacherClassroomInteractor } from "../../interface/classroom_interface/I_teacher.classroom.interactor";
 import { I_TeacherClassroomRepo } from "../../interface/classroom_interface/I_teacher.classroom.repo";
@@ -11,23 +9,21 @@ import { ClassroomJwtPayload, I_JWT, UserJwtPayload } from "../../interface/serv
 import { StudentDocument } from "../../infrastructure/model/student.model";
 import { studentIdParamType } from "../../schema/remove.student.schema";
 import { I_StudentRepo } from "../../interface/student_interface/I_student.repo";
-
 import { I_TeacherRepo } from "../../interface/teacher_interface/I_teacher.repo";
 import { TeacherDocument } from "../../infrastructure/model/teacher.model";
 import { saveMessageInput } from "../../schema/saveMessageSchema";
-
 import { ObjectId } from "mongodb";
 import { I_SocketServices } from "../../interface/service_interface/I_Socket";
 import { ChatType, PrivateChatDocument, RoleType } from "../../infrastructure/model/private.chat.model";
-
 import { SendPrivateMessageBodyType, SendPrivateMessageParamsType } from "../../schema/send.private.message.schema";
-import { getReceiverSocketId } from "../socket/socket";
 import crypto from 'crypto'
 import { I_S3Bucket } from "../../interface/service_interface/I_S3.bucket";
 import { AWS_S3_BUCKET_NAME } from "../../infrastructure/constants/env";
 import { DeleteMaterialQueryType, UploadMaterialBodyType } from "../../schema/upload.material.schema";
-import { throwDeprecation } from "process";
-
+import { CreateWorkBodyType, UpdateWorkMarkBodyType, UpdateWorkMarkParamsType } from "../../schema/work.schema";
+import { WorkFileType, WorksDocument, WorkType } from "../../infrastructure/model/works.model";
+import mongoose from "mongoose";
+import { I_DayJS } from "../../interface/service_interface/I_DayJS";
 
 export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor {
 
@@ -37,7 +33,8 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
     private uniqueIdGenerator: I_UniqueIDGenerator;
     private jwt: I_JWT;
     private socketServices: I_SocketServices;
-    private s3Bucket: I_S3Bucket
+    private s3Bucket: I_S3Bucket;
+    private dayJS: I_DayJS
 
     constructor(teacherClassroomRepo: I_TeacherClassroomRepo,
         studentRepo: I_StudentRepo,
@@ -45,16 +42,17 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
         uniqueIdGenerator: I_UniqueIDGenerator,
         jwt: I_JWT,
         socketServices: I_SocketServices,
-        s3Bucket: I_S3Bucket) {
+        s3Bucket: I_S3Bucket,
+        dayJS: I_DayJS) {
         this.teacherClassroomRepo = teacherClassroomRepo
         this.studentRepo = studentRepo;
         this.teacherRepo = teacherRepo;
         this.uniqueIdGenerator = uniqueIdGenerator;
         this.jwt = jwt;
         this.socketServices = socketServices;
-        this.s3Bucket = s3Bucket
+        this.s3Bucket = s3Bucket;
+        this.dayJS = dayJS
     }
-
 
     async createClassroom(data: CreateClassroomInputType): Promise<ClassroomDocument> {
         try {
@@ -134,8 +132,6 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
             if (!student) throw new CostumeError(404, "This student is not registered or the invalid monogdbId");
             if (!classroom) throw new CostumeError(403, "You dont have the permissions to this classroom");
 
-
-
             const newStudent = {
                 student_id: student?._id,
                 email: student?.email,
@@ -212,8 +208,6 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
                 classroom.classroom_id,
                 classroom.class_teacher_id
             );
-
-
             return
         } catch (error) {
             throw error
@@ -248,7 +242,6 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
             const savedMessage = await this.teacherClassroomRepo.saveClassroomMessage(classroom.classroom_id, message);
 
             this.socketServices.emitClassroomMessage(classroom.classroom_id, savedMessage)
-            // io.to(classroom.classroom_id).emit('classroomMessage', savedMessage)
 
             return
         } catch (error) {
@@ -299,26 +292,26 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
             if (!file) throw new CostumeError(400, 'Material is required!');
 
             const materialId = this.uniqueIdGenerator.generateMaterialId();
-            
+
             const fileName = `material-${clasroom?.classroom_id}-${materialId}`;
             const fileUrl = `https://${AWS_S3_BUCKET_NAME}.s3.amazonaws.com/materials/${fileName}`;
 
-            await this.s3Bucket.uploadClassroomMaterial(fileName,file.buffer,file.mimetype);
+            await this.s3Bucket.uploadClassroomMaterial(fileName, file.buffer, file.mimetype);
 
-            const materialDoc:ClassroomMaterialType= {
+            const materialDoc: ClassroomMaterialType = {
                 title: data.title,
                 description: data.description,
                 type: MaterialType.PDF,
                 url: fileUrl,
                 created_at: new Date()
             }
-            
-            const material = await this.teacherClassroomRepo.saveClassroomMaterial(clasroom.classroom_id,materialDoc);
 
-            if(!material) throw new CostumeError(503,"Failed to upload material. Please try again later!");
+            const material = await this.teacherClassroomRepo.saveClassroomMaterial(clasroom.classroom_id, materialDoc);
+
+            if (!material) throw new CostumeError(503, "Failed to upload material. Please try again later!");
 
             return material
-          
+
         } catch (error) {
             throw error;
         }
@@ -326,20 +319,73 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
 
     async getMaterials(user: UserJwtPayload, classroom: ClassroomJwtPayload): Promise<ClassroomMaterialType[] | null> {
         try {
-            const materials = await this.teacherClassroomRepo.fetchClassroomMaterials(classroom.classroom_id,user.userId as string);
-            console.log(materials)
+            const materials = await this.teacherClassroomRepo.fetchClassroomMaterials(classroom.classroom_id, user.userId as string);
+
             return materials;
         } catch (error) {
             throw error;
         }
     }
 
-    async deleteMaterial(user: UserJwtPayload, clasroom: ClassroomJwtPayload,material:DeleteMaterialQueryType): Promise<void> {
+    async deleteMaterial(user: UserJwtPayload, clasroom: ClassroomJwtPayload, material: DeleteMaterialQueryType): Promise<void> {
         try {
-            
-            await this.teacherClassroomRepo.deleteClassroomMaterial(clasroom.classroom_id,material.materialId)
+
+            await this.teacherClassroomRepo.deleteClassroomMaterial(clasroom.classroom_id, material.materialId)
         } catch (error) {
             throw error;
+        }
+    }
+
+    async createWork(body: CreateWorkBodyType, file: Express.Multer.File, classroom: ClassroomJwtPayload): Promise<WorksDocument> {
+        try {
+
+            const deadline = this.dayJS.convertToInternationalTime(body.submissionDate, body.submissionTime);
+            if (deadline <= new Date()) {
+                throw new CostumeError(400, "Submission date can not be in past!")
+            }
+
+            const workFileId = this.uniqueIdGenerator.generateMaterialId();
+            const fileName = `work-${classroom?.classroom_id}-${workFileId}`;
+            const fileUrl = `https://${AWS_S3_BUCKET_NAME}.s3.amazonaws.com/works/question_papers/${fileName}`
+
+            await this.s3Bucket.uploadClassroomWorks(fileName, file.buffer, file.mimetype);
+
+            const newWork: WorksDocument = {
+                classroom_id: new mongoose.Types.ObjectId(classroom.classroom_id),
+                work_type: body.workType == 'assignment' ? WorkType.ASSIGNMENT : WorkType.HOMEWORK,
+                work_file_url: fileUrl,
+                work_file_type: file.mimetype == 'application/pdf' ? WorkFileType.PDF : WorkFileType.IMAGE,
+                deadline: deadline,
+                max_marks: Number(body.maxMarks),
+                submissions: [],
+                topic: body.topic,
+                description: body.description
+            }
+
+            const work = await this.teacherClassroomRepo.saveNewWork(newWork);
+            return work;
+
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getAllWorks(clasroom: ClassroomJwtPayload): Promise<WorksDocument[] | null> {
+        try {
+            const works = await this.teacherClassroomRepo.fetchAllClassroomWorks(clasroom.classroom_id);
+            console.log('works: ', works)
+            return works;
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async updateWorkMark(workId:UpdateWorkMarkParamsType,data:UpdateWorkMarkBodyType): Promise<WorksDocument|null> {
+        try {
+            const updateMark = await this.teacherClassroomRepo.editWorkMark(workId.workId,data.studentId,Number(data.mark));
+            return updateMark;
+        } catch (error) {
+            throw error
         }
     }
 

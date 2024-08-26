@@ -41,7 +41,7 @@ export class AWSS3Bucket implements I_S3Bucket {
 
             const command = new PutObjectCommand(params);
             const response = await s3.send(command);
-          
+            console.log(response)
         } catch (error) {
             throw error
         }
@@ -54,4 +54,38 @@ export class AWSS3Bucket implements I_S3Bucket {
 
         }
     }
+    async uploadClassroomWorks(fileName: string, file: Buffer, contentType: string): Promise<void> {
+        try {
+            const params = {
+                Bucket: AWS_S3_BUCKET_NAME,
+                Key: `works/question_papers/${fileName}`,
+                Body: file,
+                ContentType: contentType,
+                ACL: ObjectCannedACL.public_read
+            }
+
+            const command = new PutObjectCommand(params);
+            const response = await s3.send(command);
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async uploadWorkSubmissionFile(fileName: string, file: Buffer, contentType: string): Promise<void> {
+        try {
+            const params = {
+                Bucket: AWS_S3_BUCKET_NAME,
+                Key: `works/submissions/${fileName}`,
+                Body: file,
+                ContentType: contentType,
+                ACL: ObjectCannedACL.public_read
+            }
+
+            const command = new PutObjectCommand(params);
+            const response = await s3.send(command);
+        } catch (error) {
+            throw error
+        }
+    }
+
 }
