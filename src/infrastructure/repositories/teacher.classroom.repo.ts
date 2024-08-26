@@ -8,6 +8,7 @@ import { TeacherClassroomDocType, TeacherModel } from "../model/teacher.model";
 import { ObjectId } from 'mongodb';
 import { CostumeError } from "../../utils/costume.error";
 import { PrivateChatDocument, PrivateChatModel } from "../model/private.chat.model";
+import { WorksDocument, WorksModel } from "../model/works.model";
 
 export class TeacherClassroomRepo implements I_TeacherClassroomRepo {
 
@@ -269,25 +270,65 @@ export class TeacherClassroomRepo implements I_TeacherClassroomRepo {
 
     async fetchClassroomMaterials(classroomId: string, classTeacherId: string): Promise<ClassroomMaterialType[] | null> {
         try {
-         
+
 
             const materials = await ClassroomModel.aggregate([
-                {$match:{_id:new mongoose.Types.ObjectId(classroomId)}},
-                {$project:{materials:1}},
-                {$unwind:"$materials"},
-                {$sort:{"materials.created_at":-1}},
-                {$group:{_id:"$_id",materials:{$push:"$materials"}}}
+                { $match: { _id: new mongoose.Types.ObjectId(classroomId) } },
+                { $project: { materials: 1 } },
+                { $unwind: "$materials" },
+                { $sort: { "materials.created_at": -1 } },
+                { $group: { _id: "$_id", materials: { $push: "$materials" } } }
             ]);
-      
+
             return materials[0]?.materials as ClassroomMaterialType[];
         } catch (error) {
             throw error
         }
     }
 
-    async deleteClassroomMaterial(classroomId: string,materialId:string): Promise<void> {
+    async deleteClassroomMaterial(classroomId: string, materialId: string): Promise<void> {
         try {
+
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async saveNewWork(data: WorksDocument): Promise<WorksDocument> {
+        try {
+            return await new WorksModel(data).save();
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async fetchAllClassroomWorks(clasroomId: string): Promise<WorksDocument[] | null> {
+        try {
+            return await WorksModel.find({
+                classroom_id: clasroomId
+            }).sort({ createdAt: -1 })
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async editWorkMark(workId: string, studentId: string, mark: number): Promise<WorksDocument | null> {
+        try {
+            const markUpdated = await WorksModel.findOneAndUpdate(
+                {
+                    _id: workId,
+                    "submissions.student_id": studentId
+                },
+                {
+                    $set: {
+                        "submissions.$.marks": mark,
+                        "submissions.$.valuated": true
+                    }
+                },
+                { new: true }
+            );
             
+            return markUpdated
         } catch (error) {
             throw error
         }

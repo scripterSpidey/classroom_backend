@@ -9,6 +9,7 @@ import { SendPrivateMessageBodyType,SendPrivateMessageParamsType } from "../../s
 import { ClassroomJwtPayload } from "../middleware/classroom.auth.middleware";
 import { DeleteMaterialQueryType, UploadMaterialBodyType } from "../../schema/upload.material.schema";
 import { UserJwtPayload } from "../../interface/service_interface/I_jwt";
+import { CreateWorkBodyType, CreateWorkFileType, UpdateWorkMarkBodyType, UpdateWorkMarkParamsType } from "../../schema/work.schema";
 
 
 
@@ -215,11 +216,44 @@ export class TeacherClassroomGateway {
             const classroom = req.classroom as ClassroomJwtPayload;
             const query = req.query as DeleteMaterialQueryType;
             await this.interactor.deleteMaterial(user,classroom,query)
-            res.status(201).json('response')
+            res.status(200).json('response')
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    async onCreateWork(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const body = req.body as CreateWorkBodyType;
+            const file = req.file
+            const clasroom = req.classroom as ClassroomJwtPayload;
+            const work = await this.interactor.createWork(body,file,clasroom)
+            res.status(201).json(work)
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    async onGetAllWorks(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const clasroom = req.classroom as ClassroomJwtPayload;
+            const works = await this.interactor.getAllWorks(clasroom);
+
+            res.status(200).json(works)
         } catch (error) {
             next(error)
         }
     }
     
+    async onUpdateWorkMark(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const params = req.params as UpdateWorkMarkParamsType;
+            const body = req.body as UpdateWorkMarkBodyType;
+            const markUpdated = await this.interactor.updateWorkMark(params,body)
+            res.status(200).json(markUpdated)
+        } catch (error) {
+            next(error)
+        }
+    }
 
 }

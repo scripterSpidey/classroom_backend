@@ -1,6 +1,7 @@
 import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage } from "../../infrastructure/model/classroom.model";
 import { PrivateChatDocument } from "../../infrastructure/model/private.chat.model";
 import { StudentDocument } from "../../infrastructure/model/student.model";
+import { WorksDocument, WorkSubmissionType } from "../../infrastructure/model/works.model";
 
 export interface I_StudentClassroomRepo {
     fetchClassroom(data: string, student_id: string): Promise<ClassroomDocument | null>;
@@ -15,5 +16,11 @@ export interface I_StudentClassroomRepo {
 
     fetchPrivateMessages(senderId:string,receiverId:string,classroomId:string):Promise<PrivateChatDocument[]>
     
-    fetchClassroomMaterials(classroomId:string,classTeacherId:string,):Promise<ClassroomMaterialType[]|null>
+    fetchClassroomMaterials(classroomId:string,classTeacherId:string,):Promise<ClassroomMaterialType[]|null>;
+
+    fetchAllClassroomWorks(clasroomId:string):Promise<WorksDocument[]|null>;
+
+    saveSubmittedWork(classroomId:string,workId:string,work:WorkSubmissionType):Promise<WorksDocument|null>;
+
+    findWork(workId:string):Promise<WorksDocument|null>;
 }

@@ -6,6 +6,8 @@ import { saveMessageInput } from "../../schema/saveMessageSchema";
 import { SendPrivateMessageBodyType, SendPrivateMessageParamsType } from "../../schema/send.private.message.schema";
 import { ClassroomJwtPayload } from "../middleware/classroom.auth.middleware";
 import { UploadMaterialBodyType } from "../../schema/upload.material.schema";
+import { SubmitWorkQueryType } from "../../schema/work.schema";
+import { UserJwtPayload } from "../../interface/service_interface/I_jwt";
 
 export class StudentClassroomGateway {
     private interactor: I_StudentClassroomInteractor;
@@ -125,8 +127,6 @@ export class StudentClassroomGateway {
         }
     }
 
-
-
     async onGetMaterials(req:CostumeRequest,res:Response,next:NextFunction){
         try {
             const user = req.user;
@@ -139,5 +139,29 @@ export class StudentClassroomGateway {
         }
     }
 
-  
+    async onGetAllWorks(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const clasroom = req.classroom as ClassroomJwtPayload;
+            const works = await this.interactor.getAllWorks(clasroom);
+
+            res.status(200).json(works)
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    async onSubmitWork(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const clasroom = req.classroom as ClassroomJwtPayload;
+            const query = req.query as SubmitWorkQueryType
+            const file = req.file;
+            const user = req.user as UserJwtPayload;
+            const submittedWork = await this.interactor.submitWork(clasroom,user,file,query);
+
+            res.status(200).json(submittedWork)
+        } catch (error) {
+            next(error)
+        }
+    }
+    
 }

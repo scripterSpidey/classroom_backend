@@ -2,6 +2,7 @@ import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage } from "../.
 import { PrivateChatDocument } from "../../infrastructure/model/private.chat.model";
 import { StudentClassroomDocType, StudentDocument } from "../../infrastructure/model/student.model";
 import { TeacherClassroomDocType } from "../../infrastructure/model/teacher.model";
+import { WorksDocument } from "../../infrastructure/model/works.model";
 
 
 
@@ -35,4 +36,10 @@ export interface I_TeacherClassroomRepo{
     fetchClassroomMaterials(classroomId:string,classTeacherId:string,):Promise<ClassroomMaterialType[]|null>;
 
     deleteClassroomMaterial(classroomId:string,materialId:string):Promise<void>;
+
+    saveNewWork(newWork:WorksDocument):Promise<WorksDocument>;
+
+    fetchAllClassroomWorks(clasroomId:string):Promise<WorksDocument[]|null>;
+
+    editWorkMark(workId:string,studentId:string,mark:number):Promise<WorksDocument|null>;
 }
