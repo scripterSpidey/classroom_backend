@@ -26,6 +26,7 @@ import multer from "multer";
 import { AWSS3Bucket } from "../../application/service/aws.s3.bucket";
 import { createWorkSchema, updateWorkMarkSchema } from "../../schema/work.schema";
 import { DayJS } from "../../application/service/day.js";
+import { createExamSchema } from "../../schema/exam.schema";
 
 const router = express.Router();
 
@@ -127,6 +128,11 @@ router.route('/work/:workId')
     .get()
     .patch(validate(updateWorkMarkSchema),
         teacherClassroomGateway.onUpdateWorkMark.bind(teacherClassroomGateway) as RequestHandler)
+
+router.route('/exams')
+    .get(teacherClassroomGateway.onGetAllExams.bind(teacherClassroomGateway) as RequestHandler)
+    .post(validate(createExamSchema),
+        teacherClassroomGateway.onCreateExam.bind(teacherClassroomGateway) as RequestHandler)
 // router.route('/all')
 //     .get(
 //         teacherClassroomGateway.onGetTeacherAllClassrooms.bind(teacherClassroomGateway))

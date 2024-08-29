@@ -22,8 +22,10 @@ import { AWS_S3_BUCKET_NAME } from "../../infrastructure/constants/env";
 import { DeleteMaterialQueryType, UploadMaterialBodyType } from "../../schema/upload.material.schema";
 import { CreateWorkBodyType, UpdateWorkMarkBodyType, UpdateWorkMarkParamsType } from "../../schema/work.schema";
 import { WorkFileType, WorksDocument, WorkType } from "../../infrastructure/model/works.model";
-import mongoose from "mongoose";
+import mongoose, { mongo } from "mongoose";
 import { I_DayJS } from "../../interface/service_interface/I_DayJS";
+import { CreateExamType } from "../../schema/exam.schema";
+import { ExamQuestionType, ExamsDocument, QuestionPaperEnum, QuestionTypeEnum } from "../../infrastructure/model/exam.model";
 
 export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor {
 
@@ -380,12 +382,76 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
         }
     }
 
-    async updateWorkMark(workId:UpdateWorkMarkParamsType,data:UpdateWorkMarkBodyType): Promise<WorksDocument|null> {
+    async updateWorkMark(workId: UpdateWorkMarkParamsType, data: UpdateWorkMarkBodyType): Promise<WorksDocument | null> {
         try {
-            const updateMark = await this.teacherClassroomRepo.editWorkMark(workId.workId,data.studentId,Number(data.mark));
+            const updateMark = await this.teacherClassroomRepo.editWorkMark(workId.workId, data.studentId, Number(data.mark));
             return updateMark;
         } catch (error) {
             throw error
+        }
+    }
+
+    async createExam(clasroom: ClassroomJwtPayload, exam: CreateExamType): Promise<ExamsDocument> {
+        try {
+            console.log(exam)
+            const utcStartTime = this.dayJS.convertToUTC(exam.startTime);
+            const utcEndTime = this.dayJS.convertToUTC(exam.lastTimeToStart);
+            if(utcStartTime === 'Invalid date' || utcEndTime === 'Invalid date'){
+                console.log('invalid')
+                throw new CostumeError(400,'Invalid date format')
+            }
+
+            const questionPaperType = exam.questionPaperType == QuestionPaperEnum.ADD ? QuestionPaperEnum.ADD:
+                exam.questionPaperType == QuestionPaperEnum.BANK ? QuestionPaperEnum.BANK :
+                QuestionPaperEnum.UPLOAD;
+
+            console.log(utcStartTime,utcEndTime);
+
+            const questions:ExamQuestionType[] = exam.questions.map(question=>{
+                const type = question.type === QuestionTypeEnum.MCQ ? QuestionTypeEnum.MCQ:
+                question.type === QuestionTypeEnum.DESCRIPTIVE ? QuestionTypeEnum.DESCRIPTIVE:
+                question.type === QuestionTypeEnum.TOF ? QuestionTypeEnum.TOF:
+                QuestionTypeEnum.FILL_BLANKS;
+                return{
+                    question:question.question,
+                    type:type,
+                    mark:Number(question.mark),
+                    options:question.options ? question.options : [],
+                    answer:question.answer
+                }
+            })
+
+            const newExam: ExamsDocument = {
+                classroom_id: new mongoose.Types.ObjectId(clasroom.classroom_id),
+                title: exam.title,
+                instructions: "",
+                issued_at: new Date(),
+                total_marks: exam.questions.reduce((acc, curr) => acc += Number(curr.mark), 0),
+                total_questions: exam.questions.length,
+                start_time: this.dayJS.convertToUTC(exam.startTime) as Date,
+                last_time_to_start: this.dayJS.convertToUTC(exam.lastTimeToStart) as Date,
+                duration: Number(exam.duration),
+                question_paper_type:questionPaperType,
+                attended: [],
+                questions: questions
+            }
+
+            const saveExam = await this.teacherClassroomRepo.saveNewExam(newExam);
+
+            console.log(saveExam);
+
+            return saveExam;
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async getAllExams(clasroom: ClassroomJwtPayload): Promise<ExamsDocument[]> {
+        try {
+            return await this.teacherClassroomRepo.fetchAllExams(clasroom.classroom_id)
+        } catch (error) {
+            throw error
+
         }
     }
 

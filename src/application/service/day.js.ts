@@ -18,4 +18,19 @@ export class DayJS implements I_DayJS{
         return deadline;
     }
 
+    convertToUTC(date:string):Date|string{
+        try {
+            dayjs.extend(utc);
+            dayjs.extend(timezone);
+            if(!dayjs(date).isValid()) return 'Invalid date'
+            
+            const dayjsDate = dayjs.tz(date,'Asia/kolkata');
+            return dayjsDate.utc().toDate()
+             
+        } catch (error) {
+            throw error
+        }
+       
+    }
+
 }

@@ -1,4 +1,5 @@
 import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage } from "../../infrastructure/model/classroom.model";
+import { ExamsDocument } from "../../infrastructure/model/exam.model";
 import { PrivateChatDocument } from "../../infrastructure/model/private.chat.model";
 import { StudentClassroomDocType, StudentDocument } from "../../infrastructure/model/student.model";
 import { TeacherClassroomDocType } from "../../infrastructure/model/teacher.model";
@@ -42,4 +43,8 @@ export interface I_TeacherClassroomRepo{
     fetchAllClassroomWorks(clasroomId:string):Promise<WorksDocument[]|null>;
 
     editWorkMark(workId:string,studentId:string,mark:number):Promise<WorksDocument|null>;
+
+    saveNewExam(exam:ExamsDocument):Promise<ExamsDocument>;
+
+    fetchAllExams(classroomId:string):Promise<ExamsDocument[]>
 }

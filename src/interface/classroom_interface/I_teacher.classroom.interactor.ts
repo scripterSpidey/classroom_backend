@@ -1,8 +1,10 @@
 import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage } from "../../infrastructure/model/classroom.model";
+import { ExamsDocument } from "../../infrastructure/model/exam.model";
 import { PrivateChatDocument } from "../../infrastructure/model/private.chat.model";
 import { StudentDocument } from "../../infrastructure/model/student.model";
 import { WorksDocument } from "../../infrastructure/model/works.model";
 import { CreateClassroomInputType } from "../../schema/create.classroom.schema";
+import { CreateExamType } from "../../schema/exam.schema";
 import { studentIdParamType } from "../../schema/remove.student.schema";
 import { saveMessageInput } from "../../schema/saveMessageSchema";
 import { SendPrivateMessageBodyType, SendPrivateMessageParamsType } from "../../schema/send.private.message.schema";
@@ -56,4 +58,8 @@ export interface I_TeacherClassroomInteractor {
     getAllWorks(classroom:ClassroomJwtPayload):Promise<WorksDocument[]|null>;
 
     updateWorkMark(workdId:UpdateWorkMarkParamsType,data:UpdateWorkMarkBodyType):Promise<WorksDocument|null>;
+
+    createExam(classroom:ClassroomJwtPayload,exam:CreateExamType):Promise<any>;
+
+    getAllExams(clasroom:ClassroomJwtPayload):Promise<ExamsDocument[]>
 }

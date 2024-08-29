@@ -10,6 +10,7 @@ import { ClassroomJwtPayload } from "../middleware/classroom.auth.middleware";
 import { DeleteMaterialQueryType, UploadMaterialBodyType } from "../../schema/upload.material.schema";
 import { UserJwtPayload } from "../../interface/service_interface/I_jwt";
 import { CreateWorkBodyType, CreateWorkFileType, UpdateWorkMarkBodyType, UpdateWorkMarkParamsType } from "../../schema/work.schema";
+import { CreateExamType } from "../../schema/exam.schema";
 
 
 
@@ -251,6 +252,28 @@ export class TeacherClassroomGateway {
             const body = req.body as UpdateWorkMarkBodyType;
             const markUpdated = await this.interactor.updateWorkMark(params,body)
             res.status(200).json(markUpdated)
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    async onCreateExam(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const body = req.body as CreateExamType;
+            const classroom = req.classroom as ClassroomJwtPayload;
+            const newExam = await this.interactor.createExam(classroom,body)
+            res.status(200).json(newExam)
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    async onGetAllExams(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const classroom = req.classroom as ClassroomJwtPayload;
+            const allExams = await this.interactor.getAllExams(classroom);
+          
+            res.status(200).json(allExams)
         } catch (error) {
             next(error)
         }

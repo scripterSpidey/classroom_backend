@@ -9,6 +9,7 @@ import { ObjectId } from 'mongodb';
 import { CostumeError } from "../../utils/costume.error";
 import { PrivateChatDocument, PrivateChatModel } from "../model/private.chat.model";
 import { WorksDocument, WorksModel } from "../model/works.model";
+import { ExamsDocument, ExamsModel } from "../model/exam.model";
 
 export class TeacherClassroomRepo implements I_TeacherClassroomRepo {
 
@@ -327,8 +328,28 @@ export class TeacherClassroomRepo implements I_TeacherClassroomRepo {
                 },
                 { new: true }
             );
-            
+
             return markUpdated
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async saveNewExam(exam:ExamsDocument): Promise<ExamsDocument> {
+        try {
+            const newExam = await new ExamsModel(exam).save();
+            return newExam
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async fetchAllExams(classroomId: string): Promise<ExamsDocument[]> {
+        try {
+            
+            const exams = await  ExamsModel.find({classroom_id:classroomId});
+           
+            return exams
         } catch (error) {
             throw error
         }
