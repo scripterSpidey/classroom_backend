@@ -12,37 +12,39 @@ import { I_JWT, UserJwtPayload } from "../../interface/service_interface/I_jwt";
 import { CostumeError } from "../../utils/costume.error";
 import { GoogleLoginInputType } from "../../schema/google.login.schema";
 import { I_API } from "../../interface/service_interface/I_API.requests";
-import { TeacherRepo } from "../../infrastructure/repositories/teacher.repo";
 import { JwtPayload } from "jsonwebtoken";
-import { AWS_S3_BUCKET_NAME } from "../../infrastructure/constants/env";
+import { API_ORIGIN, AWS_S3_BUCKET_NAME } from "../../infrastructure/constants/env";
 import { I_S3Bucket } from "../../interface/service_interface/I_S3.bucket";
 import { I_Sharp } from "../../interface/service_interface/I_sharp";
 import { TeacherDocument } from "../../infrastructure/model/teacher.model";
 import { I_StudentRepo } from "../../interface/student_interface/I_student.repo";
-import { threadId } from "worker_threads";
+import crypto from 'crypto'
+import { CLIENT_BASE_URL } from "../../infrastructure/constants/env";
+import { token } from "morgan";
+
 
 
 export class TeacherInteractor implements I_TeacherInteractor {
 
     private repository: I_TeacherRepo;
-    private studentRepo:I_StudentRepo
+    private studentRepo: I_StudentRepo
     private jwt: I_JWT;
     private bcrypt: I_Bcrypt;
     private nodemailer: I_Mailer;
     private lodash: LoDashStatic;
-    private api:I_API
-    private s3Bucket:I_S3Bucket
-    private sharp:I_Sharp
+    private api: I_API
+    private s3Bucket: I_S3Bucket
+    private sharp: I_Sharp
     constructor(
         repository: I_TeacherRepo,
-        studentRepo:I_StudentRepo,
+        studentRepo: I_StudentRepo,
         jwt: I_JWT,
         bcrypt: I_Bcrypt,
         nodemailer: I_Mailer,
         lodash: LoDashStatic,
-        api:I_API,
-        s3Bucket:I_S3Bucket,
-        sharp:I_Sharp
+        api: I_API,
+        s3Bucket: I_S3Bucket,
+        sharp: I_Sharp
     ) {
         this.repository = repository;
         this.studentRepo = studentRepo;
@@ -50,11 +52,11 @@ export class TeacherInteractor implements I_TeacherInteractor {
         this.bcrypt = bcrypt;
         this.nodemailer = nodemailer;
         this.lodash = lodash,
-        this.api = api,
-        this.s3Bucket = s3Bucket,
-        this.sharp = sharp
+            this.api = api,
+            this.s3Bucket = s3Bucket,
+            this.sharp = sharp
     }
-    
+
     resendOTP(data: { userId: string; userEmail: string; }): Promise<any> {
         throw new Error("Method not implemented.");
     }
@@ -82,7 +84,7 @@ export class TeacherInteractor implements I_TeacherInteractor {
 
             const teacher = this.lodash.omit(registerTeacher.toObject(), ['password', 'classrooms']);
 
-          
+
             const otp = generateSecureOTP();
 
             await this.repository.createVerificationDocument({
@@ -133,18 +135,18 @@ export class TeacherInteractor implements I_TeacherInteractor {
             const accessToken = this.jwt.generateToken({
                 sessionId: session._id,
                 userId: data.userId,
-                role:'teacher'
+                role: 'teacher'
             }, "1h");
 
 
             const refreshToken = this.jwt.generateToken({
                 sessionId: session._id,
                 userId: data.userId,
-                role:'teacher'
+                role: 'teacher'
             }, "1d");
 
             return {
-                
+
                 accessToken,
                 refreshToken,
                 ...verify!.toObject()
@@ -162,6 +164,8 @@ export class TeacherInteractor implements I_TeacherInteractor {
 
             if (!teacher) throw new CostumeError(401, "User doesnot exist");
 
+            if (teacher.blocked) throw new CostumeError(403, 'You have been blocked by the admin')
+
             if (teacher && await this.bcrypt.comparePassword(data.password, String(teacher.password))) {
 
                 const session = await this.repository.createSession({
@@ -175,17 +179,17 @@ export class TeacherInteractor implements I_TeacherInteractor {
                 const accessToken = this.jwt.generateToken({
                     userId: teacher._id,
                     sessionId: session._id,
-                    role:'teacher'
+                    role: 'teacher'
                 }, "2m");
 
                 const refreshToken = this.jwt.generateToken({
                     userId: teacher._id,
                     sessionId: session._id,
-                    role:'teacher'
+                    role: 'teacher'
                 }, "1d");
                 teacher.password = ''
                 return {
-                   
+
                     accessToken,
                     refreshToken,
                     ...teacher.toObject()
@@ -215,7 +219,8 @@ export class TeacherInteractor implements I_TeacherInteractor {
 
             let existingTeacher = await this.repository.findTeacher(userProfile.email);
             let existingStudent = await this.studentRepo.findStudent(userProfile.email);
-            if(existingStudent) throw new CostumeError(403,"You donot have permission to access this account")
+            if (existingStudent) throw new CostumeError(403, "You donot have permission to access this account")
+            if (existingTeacher && existingTeacher.blocked) throw new CostumeError(403, "You have been blocked from this website")
             if (!existingTeacher) {
 
                 const newTeacher = Teacher.newTeacher(
@@ -242,17 +247,17 @@ export class TeacherInteractor implements I_TeacherInteractor {
             const accessToken = this.jwt.generateToken({
                 userId: existingTeacher?._id,
                 sessionId: session._id,
-                role:'teacher'
+                role: 'teacher'
             }, "30m");
 
             const refreshToken = this.jwt.generateToken({
                 userId: existingTeacher?._id,
                 sessionId: session._id,
-                role:'teacher'
+                role: 'teacher'
             }, "1d");
-         
+
             return {
-               
+
                 accessToken,
                 refreshToken,
                 ...existingTeacher.toObject()
@@ -262,39 +267,81 @@ export class TeacherInteractor implements I_TeacherInteractor {
         }
     }
 
-    async uploadProfileImage(user:JwtPayload|null,file:Express.Multer.File):Promise<TeacherDocument|null>{
+    async uploadProfileImage(user: JwtPayload | null, file: Express.Multer.File): Promise<TeacherDocument | null> {
         try {
-          
-          if(!file)  throw new CostumeError(404,'Profile image is missing');
 
-          
-          const imageName = `image-${user!.userId}`
-          const imageUrl = `https://${AWS_S3_BUCKET_NAME}.s3.amazonaws.com/profile_images/${imageName}`
-          
-          const contentType = file.mimetype
-         
-          const resizedImage = await this.sharp.resizeImage(file.buffer)
-
-          await this.s3Bucket.uploadProfileImage(imageName,resizedImage,contentType);
+            if (!file) throw new CostumeError(404, 'Profile image is missing');
 
 
-          const data = await this.repository.saveProfileImage(user!.userId,imageUrl);
+            const imageName = `image-${user!.userId}`
+            const imageUrl = `https://${AWS_S3_BUCKET_NAME}.s3.amazonaws.com/profile_images/${imageName}`
 
-          return data;
+            const contentType = file.mimetype
+
+            const resizedImage = await this.sharp.resizeImage(file.buffer)
+
+            await this.s3Bucket.uploadProfileImage(imageName, resizedImage, contentType);
+
+
+            const data = await this.repository.saveProfileImage(user!.userId, imageUrl);
+
+            return data;
         } catch (error) {
 
-          throw error
-        }  
-      }
+            throw error
+        }
+    }
 
-    async validateTeacher(user: UserJwtPayload): Promise<TeacherDocument|null> {
+    async validateTeacher(user: UserJwtPayload): Promise<TeacherDocument | null> {
         try {
             const teacher = this.repository.findTeacherById(user.userId);
-            if(!teacher) throw new CostumeError(404,"Can not find your account")
+            if (!teacher) throw new CostumeError(404, "Can not find your account")
             return teacher
         } catch (error) {
             throw error
         }
     }
 
+    async forgotPassword(data: { email: string }): Promise<void> {
+        try {
+            const email = data.email;
+            if (!email) throw new CostumeError(400, "Email should be provided");
+
+            const teacher = await this.repository.findTeacher(email);
+            console.log(teacher)
+            if (!teacher) throw new CostumeError(404, "You are not a registered user");
+
+            const resetPasswordToken = crypto.randomBytes(32).toString('hex');
+            const expiresAt = new Date();
+            expiresAt.setTime(expiresAt.getTime() + 30 * 60 * 1000);
+            console.log(expiresAt)
+            await this.repository.saveResetPasswordToken(String(teacher._id), resetPasswordToken, expiresAt);
+
+            const resetPasswordLink = `${API_ORIGIN}/teacher/resetPassword/${resetPasswordToken}`;
+            await this.nodemailer.sendResetPasswordMail(teacher.email, resetPasswordLink);
+
+            return
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async resetPassword(data: { resetPasswordToken: string }, body: { newPassword: string }): Promise<void> {
+        try {
+            const { resetPasswordToken } = data;
+            if (!resetPasswordToken) throw new CostumeError(401, "You are not a autherized user");
+
+            const teacher = await this.repository.findTeacherByToken(resetPasswordToken);
+            if (!teacher || teacher.resetPasswordToken != resetPasswordToken) throw new CostumeError(401, "Invalid credentials!");
+
+            const hashedPassword = await this.bcrypt.encryptPassword(body.newPassword);
+
+            await this.repository.updatePassword(hashedPassword, String(teacher._id));
+
+            return
+        } catch (error) {
+            throw error
+        }
+    }
 }
+

@@ -1,4 +1,6 @@
+import { AnnouncementsDocument } from "../../infrastructure/model/announcements.model";
 import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage } from "../../infrastructure/model/classroom.model";
+import { ExamsDocument } from "../../infrastructure/model/exam.model";
 import { PrivateChatDocument } from "../../infrastructure/model/private.chat.model";
 import { WorksDocument } from "../../infrastructure/model/works.model";
 import { saveMessageInput } from "../../schema/saveMessageSchema";
@@ -10,10 +12,15 @@ import { UserJwtPayload } from "../service_interface/I_jwt";
 
 export interface I_StudentClassroomInteractor {
     findClassroom(data: any, user: any): Promise<ClassroomDocument | null>;
+
     requestToJoinClassroom(data: any, user: any): Promise<any>;
+
     getAllClassroomsForStudent(data: any): Promise<any>;
+
     getClassroomDetailsForStudent(user: any, data: any): Promise<{ classroomToken: string }>;
+
     getClassroomMessages(user: UserJwtPayload, classroom: ClassroomJwtPayload): Promise<ClassroomMessage[] | []>;
+
     sendClassroomMessage(user: UserJwtPayload, classroom: ClassroomJwtPayload, body: saveMessageInput): Promise<any>;
 
     sendPrivateMessage(user: UserJwtPayload,
@@ -29,5 +36,9 @@ export interface I_StudentClassroomInteractor {
 
     getAllWorks(classroom:ClassroomJwtPayload):Promise<WorksDocument[]|null>;
 
-    submitWork(classroom:ClassroomJwtPayload,user:UserJwtPayload,file:Express.Multer.File,workId:SubmitWorkQueryType):Promise<any>
+    submitWork(classroom:ClassroomJwtPayload,user:UserJwtPayload,file:Express.Multer.File,workId:SubmitWorkQueryType):Promise<any>;
+
+    getAnnouncements(classroom:ClassroomJwtPayload):Promise<AnnouncementsDocument[]|null>
+
+    getAllExams(clasroom:ClassroomJwtPayload):Promise<ExamsDocument[]>
 } 

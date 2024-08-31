@@ -1,4 +1,4 @@
-import express, { NextFunction } from "express";
+import express, { NextFunction, RequestHandler } from "express";
 import { StudentRepo } from "../../infrastructure/repositories/student.repo";
 import { StudentInteractor } from "../../application/interactor/student.interactor";
 import { StudentController } from "../gateway/student.gateway";
@@ -66,19 +66,19 @@ const router = express.Router();
 
 router.post('/register',
     validate(registrationSchema),
-    studentGateway.onRegister.bind(studentGateway)as express.RequestHandler);
+    studentGateway.onRegister.bind(studentGateway) as express.RequestHandler);
 
 router.post('/verify',
     validate(verificationOTPSchema),
-    studentGateway.onVerifyOTP.bind(studentGateway)as express.RequestHandler);
+    studentGateway.onVerifyOTP.bind(studentGateway) as express.RequestHandler);
 
 router.post('/login',
     validate(loginSchema),
-    studentGateway.onLogin.bind(studentGateway)as express.RequestHandler);
+    studentGateway.onLogin.bind(studentGateway) as express.RequestHandler);
 
 router.post('/logout',
     validate(logoutSchema),
-    studentGateway.onLogout.bind(studentGateway)as express.RequestHandler) 
+    studentGateway.onLogout.bind(studentGateway) as express.RequestHandler)
 
 router.patch('/resend_otp',
     studentGateway.onResendOTP.bind(studentGateway) as express.RequestHandler
@@ -86,17 +86,23 @@ router.patch('/resend_otp',
 
 router.post('/google_login',
     validate(googelLoginSchema),
-    studentGateway.onGoogleLogin.bind(studentGateway)as express.RequestHandler
+    studentGateway.onGoogleLogin.bind(studentGateway) as RequestHandler
 )
+
+router.route('/forgotPassword')
+    .post(studentGateway.onForgotPassword.bind(studentGateway) as RequestHandler)
+
+router.route('/resetPassword/:resetPasswordToken')
+    .post(studentGateway.onResetPassword.bind(studentGateway) as RequestHandler)
 
 router.route('/profile')
     .get()
     .post()
 
 router.route('/profile/image')
-    .post(studentAuth.authenticateStudent.bind(studentAuth)as express.RequestHandler,
+    .post(studentAuth.authenticateStudent.bind(studentAuth) as express.RequestHandler,
         upload.single('profile_image'),
-        studentGateway.onProfielImageUpload.bind(studentGateway)as express.RequestHandler)
+        studentGateway.onProfielImageUpload.bind(studentGateway) as express.RequestHandler)
 
 router.get('/auth',
     studentAuth.authenticateStudent.bind(studentAuth) as express.RequestHandler,
@@ -104,8 +110,8 @@ router.get('/auth',
 
 
 router.use('/classroom',
-    studentAuth.authenticateStudent.bind(studentAuth)as express.RequestHandler,
+    studentAuth.authenticateStudent.bind(studentAuth) as express.RequestHandler,
     classroomRouter)
 
- 
+
 export default router 

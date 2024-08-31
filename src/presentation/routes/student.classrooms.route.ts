@@ -46,7 +46,7 @@ const classroomAuthInteractor = new ClasroomAuthInteractor(
     teacherClassroomRepo,
     studentClassroomRepo,
     jwt,
-    
+
 )
 
 const classroomAuth = new ClassroomAuthMiddleware(classroomAuthInteractor)
@@ -93,6 +93,12 @@ router.route('/work')
     .get()
     .post(upload.single('workSubmission'),
         validate(submitWorkSchema),
-        studentClassroomGateway.onSubmitWork.bind(studentClassroomGateway) as RequestHandler)
+        studentClassroomGateway.onSubmitWork.bind(studentClassroomGateway) as RequestHandler);
+
+router.route('/exams')
+    .get(studentClassroomGateway.onGetAllExams.bind(studentClassroomGateway) as RequestHandler)
+
+router.route('/announcements')
+    .get(studentClassroomGateway.onGetAnnouncements.bind(studentClassroomGateway) as RequestHandler)
 
 export default router;

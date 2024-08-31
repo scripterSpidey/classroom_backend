@@ -98,4 +98,37 @@ export class StudentRepo implements I_StudentRepo {
         }
     }
 
+    async saveResetPasswordToken(studentId:string,token:string,tokenExpires:Date):Promise<void>{
+        try {
+            await StudentModel.findByIdAndUpdate(
+                studentId,
+                {$set:{resetPasswordToken:token,resetPasswordTokenExpires:tokenExpires}}
+            )
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async findStudentByToken(token:string):Promise<StudentDocument|null>{
+        try {
+            return await StudentModel.findOne({
+                resetPasswordToken:token,
+                resetPasswordTokenExpires:{$gt:new Date()}
+            })
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async updatePassword(newPassword:string,studentId:string):Promise<void>{
+        try {
+            await StudentModel.findByIdAndUpdate(
+                studentId,
+                {$set:{password:newPassword}}
+            )
+        } catch (error) {
+            throw error
+        }
+    }
+
 }

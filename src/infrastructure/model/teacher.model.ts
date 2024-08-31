@@ -17,7 +17,9 @@ export interface TeacherDocument extends mongoose.Document{
         joined_at: Date,
         blocked: boolean
     }>,
-    profile_image:string | null
+    profile_image:string | null,
+    resetPasswordToken?:string,
+    resetPasswordTokenExpires?:string
 }
 
 export type TeacherClassroomDocType = TeacherDocument["classrooms"][number];
@@ -55,6 +57,14 @@ const teacherSchema:mongoose.Schema = new mongoose.Schema<TeacherDocument>({
     profile_image:{
         type:String,
         default:null
+    },
+    resetPasswordToken:{
+        type:String,
+        default:''
+    },
+    resetPasswordTokenExpires:{
+        type:String,
+        default:''
     }
 },{timestamps:true})
 

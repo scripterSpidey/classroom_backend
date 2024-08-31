@@ -119,4 +119,38 @@ export class TeacherRepo implements I_TeacherRepo{
         }
     }
     
+    async saveResetPasswordToken(teacherId:string,token:string,tokenExpires:Date):Promise<void>{
+        try {
+            await TeacherModel.findByIdAndUpdate(
+                teacherId,
+                {$set:{resetPasswordToken:token,resetPasswordTokenExpires:tokenExpires}}
+            )
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async findTeacherByToken(token:string):Promise<TeacherDocument|null>{
+        try {
+            return await TeacherModel.findOne({
+                resetPasswordToken:token,
+                resetPasswordTokenExpires:{$gt:new Date()}
+            })
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async updatePassword(newPassword:string,teacherId:string):Promise<void>{
+        try {
+            await TeacherModel.findByIdAndUpdate(
+                teacherId,
+                {$set:{password:newPassword}}
+            )
+        } catch (error) {
+            throw error
+        }
+    }
+
+
 }

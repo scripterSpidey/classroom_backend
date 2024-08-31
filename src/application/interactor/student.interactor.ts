@@ -17,10 +17,10 @@ import { I_API } from "../../interface/service_interface/I_API.requests";
 import { I_S3Bucket } from "../../interface/service_interface/I_S3.bucket";
 import { JwtPayload } from "jsonwebtoken";
 import { I_Sharp } from "../../interface/service_interface/I_sharp";
-import { AWS_S3_BUCKET_NAME } from "../../infrastructure/constants/env";
+import { API_ORIGIN, AWS_S3_BUCKET_NAME } from "../../infrastructure/constants/env";
 import { I_TeacherRepo } from "../../interface/teacher_interface/I_teacher.repo";
 import { TeacherDocument } from "../../infrastructure/model/teacher.model";
-
+import crypto from 'crypto'
 
 
 export class StudentInteractor implements I_StudentInteractor{
@@ -162,6 +162,8 @@ export class StudentInteractor implements I_StudentInteractor{
                 
                 if(student && await this.hashPassword.comparePassword(password,String(student?.password))){
 
+                    if(student.blocked) throw new CostumeError(403,"You have been blocked from this website")
+
                     const session = await this.repository.createSession({
                         userId:student._id,
                         role:"student",
@@ -169,6 +171,8 @@ export class StudentInteractor implements I_StudentInteractor{
                         active: true,
                         createdAt:Date.now(),
                     });
+
+                    
 
                     const accessToken = this.jwt.generateToken({
                         userId:student._id,
@@ -187,7 +191,7 @@ export class StudentInteractor implements I_StudentInteractor{
                         ...student.toObject()
                     }
                 }else{
-                    throw new CostumeError(401,"Password doesnot match")
+                    throw new CostumeError(401,"Invalid credentials")
                 }
            } catch (error) {
                 throw error
@@ -228,6 +232,7 @@ export class StudentInteractor implements I_StudentInteractor{
                 let existingStudent = await this.repository.findStudent(userProfile.email);
                 let existingTeacher = await this.teacherRepo.findTeacher(userProfile.email);
                 if(existingTeacher) throw new CostumeError(403,"This is an admin account! choose a different one for student!")
+                if(existingStudent && existingStudent.blocked) throw new CostumeError(403,"You have been blocked from this website")
                 if(!existingStudent){
 
                     const newStudent =  Student.newStudent(
@@ -308,6 +313,50 @@ export class StudentInteractor implements I_StudentInteractor{
                 throw error;
             }
         }
+
+
+        async forgotPassword(data: { email: string }): Promise<void> {
+            try {
+                const email = data.email;
+                if (!email) throw new CostumeError(400, "Email should be provided");
+    
+                const student = await this.repository.findStudent(email);
+              
+                if (!student) throw new CostumeError(404, "You are not a registered user");
+    
+                const resetPasswordToken = crypto.randomBytes(32).toString('hex');
+                const expiresAt = new Date();
+                expiresAt.setTime(expiresAt.getTime() + 30 * 60 * 1000);
+                console.log(expiresAt)
+                await this.repository.saveResetPasswordToken(String(student._id), resetPasswordToken, expiresAt);
+    
+                const resetPasswordLink = `${API_ORIGIN}/student/resetPassword/${resetPasswordToken}`;
+                await this.mailer.sendResetPasswordMail(student.email, resetPasswordLink);
+    
+                return
+            } catch (error) {
+                throw error
+            }
+        }
+
+        async resetPassword(data: { resetPasswordToken: string }, body: { newPassword: string }): Promise<void> {
+            try {
+                const { resetPasswordToken } = data;
+                if (!resetPasswordToken) throw new CostumeError(401, "You are not a autherized user");
+    
+                const student = await this.repository.findStudentByToken(resetPasswordToken);
+                if (!student || student.resetPasswordToken != resetPasswordToken) throw new CostumeError(401, "Invalid credentials!");
+    
+                const hashedPassword = await this.hashPassword.encryptPassword(body.newPassword);
+    
+                await this.repository.updatePassword(hashedPassword, String(student._id));
+    
+                return
+            } catch (error) {
+                throw error
+            }
+        }
+    
     }
 
 

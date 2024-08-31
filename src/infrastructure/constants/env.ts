@@ -12,6 +12,7 @@ export const NODE_ENV = getEnv("NODE_ENV");
 export const API_ORIGIN = getEnv("API_ORIGIN")
 export const EMAIL_PASSKEY = getEnv('EMAIL_PASSKEY')
 export const EMAIL = getEnv("EMAIL");
+export const CLIENT_BASE_URL = getEnv('CLIENT_BASE_URL')
 
 //jwt
 export const JWT_PRIVATE_KEY = getEnv("JWT_PRIVATE_KEY");

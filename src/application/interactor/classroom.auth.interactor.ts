@@ -54,12 +54,20 @@ export class ClasroomAuthInteractor implements I_ClassroomAuthInteractor {
             if (verifyToken.payload) {
              
                 const { student_id,classroom_id } = verifyToken.payload as ClassroomJwtPayload
-                const student = await this.studentClassroomRepo.fetchClassroomDetailsForStudent(classroom_id,student_id);
-
+                const classroom = await this.studentClassroomRepo.fetchClassroomDetailsForStudent(classroom_id,student_id);
+                
+                console.log('student: ',classroom)
 
                 if (student_id != user.userId)
                     throw new CostumeError(403, "You donot have the permission to access this clasroom contents");
+                const status = classroom?.students.find(student=>student.student_id==user.userId)?.blocked;
 
+                if(status){
+                    throw new CostumeError(401,'You have been banned from this classroom!')
+                }
+
+                if(classroom?.banned) throw new CostumeError(403,"This classroom has been temporarily banned!")
+                    
                 return verifyToken.payload as ClassroomJwtPayload
             }
 

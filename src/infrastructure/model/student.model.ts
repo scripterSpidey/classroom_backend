@@ -21,7 +21,9 @@ export interface StudentDocument extends Document {
         joined_at: Date,
         blocked: boolean
     }>,
-    profile_image: string | null
+    profile_image: string | null,
+    resetPasswordToken?:string,
+    resetPasswordTokenExpires?:string
 }
 
 export type StudentClassroomDocType = StudentDocument["classrooms"][number];
@@ -59,6 +61,14 @@ const studentSchema: Schema = new Schema<StudentDocument>({
     profile_image: {
         type: String,
         default: null
+    },
+    resetPasswordToken:{
+        type:String,
+        default:''
+    },
+    resetPasswordTokenExpires:{
+        type:String,
+        default:''
     }
 }, { timestamps: true })
 

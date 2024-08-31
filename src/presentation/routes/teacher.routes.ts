@@ -1,4 +1,4 @@
-import express from "express";
+import express, { RequestHandler } from "express";
 
 import { TeacherInteractor } from "../../application/interactor/teacher.interactor";
 import { TeacherController } from "../gateway/teacher.gateway";
@@ -80,10 +80,18 @@ router.post('/google_login',
     teacherGateway.onGoogleLogin.bind(teacherGateway) 
 )
 
+router.route('/forgotPassword')
+    .post(teacherGateway.onForgotPassword.bind(teacherGateway) as RequestHandler)
+
+router.route('/resetPassword/:resetPasswordToken')
+    .post(teacherGateway.onResetPassword.bind(teacherGateway) as RequestHandler)
+
 router.route('/profile/image')
     .post(teacherAuth.authenticateTeacher.bind(teacherAuth) as express.RequestHandler,
         upload.single('profile_image'),
         teacherGateway.onProfielImageUpload.bind(teacherGateway) as express.RequestHandler)
+
+
 
 router.get('/auth',
     teacherAuth.authenticateTeacher.bind(teacherAuth) as express.RequestHandler,

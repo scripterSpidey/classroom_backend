@@ -10,6 +10,7 @@ import { CostumeError } from "../../utils/costume.error";
 import { PrivateChatDocument, PrivateChatModel } from "../model/private.chat.model";
 import { WorksDocument, WorksModel } from "../model/works.model";
 import { ExamsDocument, ExamsModel } from "../model/exam.model";
+import { AnnouncementsDocument, AnnouncementsModel } from "../model/announcements.model";
 
 export class TeacherClassroomRepo implements I_TeacherClassroomRepo {
 
@@ -133,7 +134,12 @@ export class TeacherClassroomRepo implements I_TeacherClassroomRepo {
 
             await StudentModel.findByIdAndUpdate(
                 student_id,
-                { $pull: { classrooms: classroom_id } }
+                { 
+                    $pull: { 
+                        classrooms: { classroom_id: classroom_id } 
+                    } 
+                },
+                { new: true } 
             )
 
         } catch (error) {
@@ -166,8 +172,6 @@ export class TeacherClassroomRepo implements I_TeacherClassroomRepo {
                     }
                 }
             )
-
-
 
             await StudentModel.findOneAndUpdate(
                 {
@@ -303,6 +307,14 @@ export class TeacherClassroomRepo implements I_TeacherClassroomRepo {
         }
     }
 
+    async saveNewAnnouncement(data:AnnouncementsDocument):Promise<AnnouncementsDocument>{
+        try {
+            return await new AnnouncementsModel(data).save()
+        } catch (error) {
+            throw error
+        }
+    }
+
     async fetchAllClassroomWorks(clasroomId: string): Promise<WorksDocument[] | null> {
         try {
             return await WorksModel.find({
@@ -350,6 +362,15 @@ export class TeacherClassroomRepo implements I_TeacherClassroomRepo {
             const exams = await  ExamsModel.find({classroom_id:classroomId});
            
             return exams
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async fetchAnnouncements(classroomId: string): Promise<AnnouncementsDocument[]|null> {
+        try {
+           return await AnnouncementsModel.find({classroom_id:classroomId})
+           .sort({createdAt:-1})
         } catch (error) {
             throw error
         }

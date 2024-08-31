@@ -1,4 +1,4 @@
-import mongoose, { Model, mongo } from "mongoose";
+import mongoose, { Model } from "mongoose";
 
 export enum QuestionTypeEnum {
     MCQ = 'mcq',

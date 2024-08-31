@@ -45,8 +45,6 @@ io.on('connection',(socket)=>{
         onlineUsers[classroomId][userId] = socket.id
         userSocketMap[userId] = socket.id  
     }
-
-    // const room = io.sockets.adapter.rooms; 
     
     socket.on('joinChatroom',userIds=>{
        

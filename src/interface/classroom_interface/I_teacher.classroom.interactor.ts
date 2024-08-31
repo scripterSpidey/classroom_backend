@@ -1,3 +1,4 @@
+import { AnnouncementsDocument } from "../../infrastructure/model/announcements.model";
 import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage } from "../../infrastructure/model/classroom.model";
 import { ExamsDocument } from "../../infrastructure/model/exam.model";
 import { PrivateChatDocument } from "../../infrastructure/model/private.chat.model";
@@ -62,4 +63,6 @@ export interface I_TeacherClassroomInteractor {
     createExam(classroom:ClassroomJwtPayload,exam:CreateExamType):Promise<any>;
 
     getAllExams(clasroom:ClassroomJwtPayload):Promise<ExamsDocument[]>
+
+    getAnnouncements(classroom:ClassroomJwtPayload):Promise<AnnouncementsDocument[]|null>
 }

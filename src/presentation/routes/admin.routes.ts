@@ -24,18 +24,21 @@ router.route('/teachers')
 
 router.route('/teacher/:teacherId')
     .get(adminGateway.onGetTeacherInfo.bind(adminGateway))
+    .patch(adminGateway.onBLockTeacher.bind(adminGateway))
 
 router.route('/students')
     .get(adminGateway.onGetStudents.bind(adminGateway));
 
 router.route('/student/:studentId')
-    .get();
+    .get(adminGateway.onGetStudentInfo.bind(adminGateway))
+    .patch(adminGateway.onBlockOrUnblockStudent.bind(adminGateway))
 
 router.route('/classrooms')
     .get(adminGateway.onGetClassrooms.bind(adminGateway));
 
 router.route('/classroom/:classroomId')
-    .get(adminGateway.onGetClassroomInfo.bind(adminGateway));
+    .get(adminGateway.onGetClassroomInfo.bind(adminGateway))
+    .patch(adminGateway.onBanOrUnbanClassroom.bind(adminGateway))
 
 
 export default router;

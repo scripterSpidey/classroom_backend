@@ -23,4 +23,6 @@ export interface I_TeacherInteractor{
     googleLogin(data:GoogleLoginInputType):Promise<any>;
     uploadProfileImage(user:JwtPayload|null|undefined,file:Express.Multer.File):Promise<TeacherDocument|null>;
     validateTeacher(user:UserJwtPayload):Promise<TeacherDocument|null>;
+    forgotPassword(data:{email:string}):Promise<void>;
+    resetPassword(data:{resetPasswordToken:string},body:{newPassword:string}):Promise<void>
 }

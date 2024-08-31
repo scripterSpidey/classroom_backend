@@ -163,5 +163,27 @@ export class StudentClassroomGateway {
             next(error)
         }
     }
+
+    async onGetAllExams(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const classroom = req.classroom as ClassroomJwtPayload;
+            const allExams = await this.interactor.getAllExams(classroom);
+          
+            res.status(200).json(allExams)
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    async onGetAnnouncements(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const classroom = req.classroom as ClassroomJwtPayload
+            const announcements = await this.interactor.getAnnouncements(classroom)
+            console.log(announcements)
+            res.status(200).json(announcements)
+        } catch (error) {
+            next(error)
+        }
+    }
     
 }

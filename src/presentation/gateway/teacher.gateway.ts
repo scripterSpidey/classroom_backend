@@ -1,20 +1,20 @@
-import { NextFunction,Request,Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { I_TeacherInteractor } from "../../interface/teacher_interface/I_teacher.interactor";
 import { accessTokenExpirationTime, refreshTokenExpirationTime } from "../../infrastructure/constants/appConstants";
 import { CostumeRequest } from "../../interface/I_express.request";
 
 
-export class TeacherController{
+export class TeacherController {
     private interactor: I_TeacherInteractor;
 
     constructor(
-        interactor:I_TeacherInteractor
-    ){
+        interactor: I_TeacherInteractor
+    ) {
         this.interactor = interactor;
     }
 
 
-    async onRegister(req:Request,res:Response,next:NextFunction){
+    async onRegister(req: Request, res: Response, next: NextFunction) {
         try {
             const data = req.body;
 
@@ -27,20 +27,20 @@ export class TeacherController{
         }
     }
 
-    async onVerifyOTP(req:Request,res:Response,next:NextFunction){
+    async onVerifyOTP(req: Request, res: Response, next: NextFunction) {
         try {
             const data = req.body;
 
             const otpVerified = await this.interactor.verifyOTP(data);
 
-            res.cookie('teacherAccessToken',otpVerified.accessToken,{
-                maxAge:accessTokenExpirationTime,
-                httpOnly:true
+            res.cookie('teacherAccessToken', otpVerified.accessToken, {
+                maxAge: accessTokenExpirationTime,
+                httpOnly: true
             });
 
-            res.cookie('teacherRefreshToken',otpVerified.refreshToken,{
-                maxAge:refreshTokenExpirationTime,
-                httpOnly:true
+            res.cookie('teacherRefreshToken', otpVerified.refreshToken, {
+                maxAge: refreshTokenExpirationTime,
+                httpOnly: true
             })
 
             res.status(200).json(otpVerified)
@@ -49,19 +49,19 @@ export class TeacherController{
         }
     }
 
-    async onLogin(req:Request,res:Response,next:NextFunction){
+    async onLogin(req: Request, res: Response, next: NextFunction) {
         try {
             const data = req.body;
             const authenticated = await this.interactor.login(data);
 
-            res.cookie('teacherAccessToken',authenticated.accessToken,{
-                maxAge:accessTokenExpirationTime,
-                httpOnly:true
+            res.cookie('teacherAccessToken', authenticated.accessToken, {
+                maxAge: accessTokenExpirationTime,
+                httpOnly: true
             })
 
-            res.cookie('teacherRefreshToken',authenticated.refreshToken,{
-                maxAge:refreshTokenExpirationTime,
-                httpOnly:true
+            res.cookie('teacherRefreshToken', authenticated.refreshToken, {
+                maxAge: refreshTokenExpirationTime,
+                httpOnly: true
             })
 
             res.status(200).json(authenticated)
@@ -70,43 +70,43 @@ export class TeacherController{
         }
     }
 
-    async onLogout(req:Request,res:Response,next:NextFunction){
+    async onLogout(req: Request, res: Response, next: NextFunction) {
         try {
             const data = req.body;
             await this.interactor.logout(data);
 
-            res.cookie('teacherAccessToken','',{
-                maxAge:0,
-                httpOnly:true
+            res.cookie('teacherAccessToken', '', {
+                maxAge: 0,
+                httpOnly: true
             })
 
-            res.cookie('teacherRefreshToken','',{
-                maxAge:0,
-                httpOnly:true
+            res.cookie('teacherRefreshToken', '', {
+                maxAge: 0,
+                httpOnly: true
             });
 
             res.status(200).json({
-                authenticated:false,
-                message:"loggedout successfully"
+                authenticated: false,
+                message: "loggedout successfully"
             })
         } catch (error) {
             next(error)
         }
     }
 
-    async onGoogleLogin(req:Request,res:Response,next:NextFunction):Promise<void>{
+    async onGoogleLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const data = req.body;
 
             const registerResponse = await this.interactor.googleLogin(data);
-        
-            res.cookie("teacherAccessToken",registerResponse.accessToken,{
-                maxAge:accessTokenExpirationTime,
+
+            res.cookie("teacherAccessToken", registerResponse.accessToken, {
+                maxAge: accessTokenExpirationTime,
                 httpOnly: true,
             })
 
-            res.cookie("teacherRefreshToken",registerResponse.refreshToken,{
-                maxAge:refreshTokenExpirationTime,
+            res.cookie("teacherRefreshToken", registerResponse.refreshToken, {
+                maxAge: refreshTokenExpirationTime,
                 httpOnly: true,
             })
 
@@ -116,13 +116,13 @@ export class TeacherController{
         }
     }
 
-    async onProfielImageUpload(req:CostumeRequest,res:Response,next:NextFunction){
-        
+    async onProfielImageUpload(req: CostumeRequest, res: Response, next: NextFunction) {
+
         const user = req.user;
-        
+
         const file = req.file;
         try {
-            const response = await this.interactor.uploadProfileImage(user,file!);
+            const response = await this.interactor.uploadProfileImage(user, file!);
             res.status(200).json(response)
         } catch (error) {
             next(error)
@@ -130,11 +130,34 @@ export class TeacherController{
     }
 
 
-    async onAuthRoute(req:CostumeRequest,res:Response,next:NextFunction){
+    async onAuthRoute(req: CostumeRequest, res: Response, next: NextFunction) {
         const user = req.user;
         const teacher = await this.interactor.validateTeacher(user!)
-      
+
         res.status(201).json(teacher)
-    } 
+    }
+
+    async onForgotPassword(req: CostumeRequest, res: Response, next: NextFunction) {
+        const body = req.body as { email: string }
+        try {
+            console.log(req.headers.host)
+            await this.interactor.forgotPassword(body)
+            res.status(200).json('response')
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    async onResetPassword(req: CostumeRequest, res: Response, next: NextFunction) {
+        const params = req.params as { resetPasswordToken: string }
+        const body = req.body as { newPassword: string }
+        try {
+            console.log(params)
+            await this.interactor.resetPassword(params,body)
+            res.status(200).json('response')
+        } catch (error) {
+            next(error)
+        }
+    }
 
 }   

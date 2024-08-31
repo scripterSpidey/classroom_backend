@@ -132,9 +132,11 @@ router.route('/work/:workId')
 router.route('/exams')
     .get(teacherClassroomGateway.onGetAllExams.bind(teacherClassroomGateway) as RequestHandler)
     .post(validate(createExamSchema),
-        teacherClassroomGateway.onCreateExam.bind(teacherClassroomGateway) as RequestHandler)
-// router.route('/all')
-//     .get(
-//         teacherClassroomGateway.onGetTeacherAllClassrooms.bind(teacherClassroomGateway))
+        teacherClassroomGateway.onCreateExam.bind(teacherClassroomGateway) as RequestHandler);
+
+router.route('/announcements')
+    .get(teacherClassroomGateway.onGetAnnouncements.bind(teacherClassroomGateway) as RequestHandler)
+
+
 
 export default router  

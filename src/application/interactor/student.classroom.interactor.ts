@@ -8,7 +8,7 @@ import { saveMessageInput } from "../../schema/saveMessageSchema";
 
 import { I_StudentRepo } from "../../interface/student_interface/I_student.repo";
 
-import { getReceiverSocketId, io } from "../socket/socket";
+
 import { I_SocketServices } from "../../interface/service_interface/I_Socket";
 import { SendPrivateMessageBodyType, SendPrivateMessageParamsType } from "../../schema/send.private.message.schema";
 import { ObjectId } from "mongodb";
@@ -20,6 +20,8 @@ import { I_UniqueIDGenerator } from "../../interface/service_interface/I_Unique.
 import { AWS_S3_BUCKET_NAME } from "../../infrastructure/constants/env";
 import { I_S3Bucket } from "../../interface/service_interface/I_S3.bucket";
 import mongoose from "mongoose";
+import { AnnouncementsDocument } from "../../infrastructure/model/announcements.model";
+import { ExamsDocument } from "../../infrastructure/model/exam.model";
 
 export class StudentClassroomInteractor implements I_StudentClassroomInteractor {
 
@@ -90,7 +92,7 @@ export class StudentClassroomInteractor implements I_StudentClassroomInteractor 
 
             if (!classroom) throw new CostumeError(403, "You are not a participant of this classroom");
 
-
+            if(classroom.banned) throw new CostumeError(403,"This classroom has been temporarily banned!")
 
             classroom.students.forEach(student => {
                 if (student.student_id == user.userId && student.blocked) {
@@ -247,6 +249,24 @@ export class StudentClassroomInteractor implements I_StudentClassroomInteractor 
             return submittedWork.submissions;
         } catch (error) {
             throw error;
+        }
+    }
+
+    async getAllExams(clasroom: ClassroomJwtPayload): Promise<ExamsDocument[]> {
+        try {
+            return await this.classroomRepo.fetchAllExams(clasroom.classroom_id)
+        } catch (error) {
+            throw error
+
+        }
+    }
+
+    async getAnnouncements(clasroom: ClassroomJwtPayload): Promise<AnnouncementsDocument[]|null> {
+        try {
+            return await this.classroomRepo.fetchAnnouncements(clasroom.classroom_id)
+        } catch (error) {
+            throw error
+
         }
     }
 

@@ -67,7 +67,7 @@ export class StudentController {
                 httpOnly: true,
             })
 
-            res.status(authenticated.status).json(authenticated)
+            res.status(200).json(authenticated)
         } catch (error) {
             next(error);
         }
@@ -164,5 +164,28 @@ export class StudentController {
             next(error)
         }
 
+    }
+
+    async onForgotPassword(req: CostumeRequest, res: Response, next: NextFunction) {
+        const body = req.body as { email: string }
+        try {
+            console.log(req.headers.host)
+            await this.interactor.forgotPassword(body)
+            res.status(200).json('response')
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    async onResetPassword(req: CostumeRequest, res: Response, next: NextFunction) {
+        const params = req.params as { resetPasswordToken: string }
+        const body = req.body as { newPassword: string }
+        try {
+            console.log(params)
+            await this.interactor.resetPassword(params,body)
+            res.status(200).json('response')
+        } catch (error) {
+            next(error)
+        }
     }
 }

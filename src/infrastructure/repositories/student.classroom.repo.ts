@@ -6,6 +6,8 @@ import mongoose, { Aggregate } from "mongoose";
 import { CostumeError } from "../../utils/costume.error";
 import { PrivateChatDocument, PrivateChatModel } from "../model/private.chat.model";
 import { WorksDocument, WorksModel, WorkSubmissionType } from "../model/works.model";
+import { AnnouncementsDocument, AnnouncementsModel } from "../model/announcements.model";
+import { ExamsDocument, ExamsModel } from "../model/exam.model";
 
 export class StudentClassroomRepo implements I_StudentClassroomRepo {
 
@@ -176,5 +178,24 @@ export class StudentClassroomRepo implements I_StudentClassroomRepo {
         }
     }
 
+    
+    async fetchAllExams(classroomId: string): Promise<ExamsDocument[]> {
+        try {
+            
+            const exams = await  ExamsModel.find({classroom_id:classroomId});
+           
+            return exams
+        } catch (error) {
+            throw error
+        }
+    }
 
+    async fetchAnnouncements(classroomId: string): Promise<AnnouncementsDocument[]|null> {
+        try {
+           return await AnnouncementsModel.find({classroom_id:classroomId})
+           .sort({createdAt:-1})
+        } catch (error) {
+            throw error
+        }
+    }
 }

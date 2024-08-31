@@ -35,9 +35,10 @@ export class AdminInteractor implements I_AdminInteractor {
         throw new Error("Method not implemented.");
     }
 
-    async getTeachers(): Promise<TeacherDocument[]> {
+    async getTeachers(query:{page:number,rows:number}): Promise<TeacherDocument[]> {
         try {
-            const teachers = await this.repository.fetchTeachers();
+            const {page,rows} = query;
+            const teachers = await this.repository.fetchTeachers((page-1)*rows,rows);
 
             return teachers;
         } catch (error) {
@@ -45,18 +46,22 @@ export class AdminInteractor implements I_AdminInteractor {
         }
     }
 
-    async getStudents(): Promise<StudentDocument[]> {
+    async getStudents(query:{page:number,rows:number}): Promise<StudentDocument[]> {
         try {
-            const students = await this.repository.fetchStudents();
+            const {page,rows} = query;
+            const students = await this.repository.fetchStudents((page-1)*rows,rows);
             return students;
         } catch (error) {
             throw error;
         }
     }
 
-    async getClassrooms(): Promise<ClassroomDocument[]> {
+    async getClassrooms(query:{page:number,rows:number}): Promise<ClassroomDocument[]> {
         try {
-            const calssrooms = await this.repository.fetchClassrooms();
+            const {page,rows} = query;
+            console.log(query)
+            const calssrooms = await this.repository.fetchClassrooms((page-1)*rows,rows);
+            console.log(calssrooms)
             return calssrooms;
         } catch (error) {
             throw error;
@@ -66,7 +71,22 @@ export class AdminInteractor implements I_AdminInteractor {
     async getTeacherInfo(data: { teacherId: string }): Promise<TeacherDocument | null> {
         try {
             const teacher = await this.repository.fetchTeacherInfo(data.teacherId);
+            console.log(teacher?.classrooms)
             return teacher;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async blockOrUnblockTeacher(data: { teacherId: string }): Promise<void> {
+        try {
+            const teacher = await this.repository.fetchTeacherInfo(data.teacherId);
+
+            if (!teacher) throw new CostumeError(404, "Can not find the user you are looking for");
+
+            const status = teacher.blocked;
+
+            await this.repository.blockTeacher(data.teacherId, !status)
         } catch (error) {
             throw error;
         }
@@ -75,6 +95,7 @@ export class AdminInteractor implements I_AdminInteractor {
     async getStudentInfo(data: { studentId: string }): Promise<StudentDocument | null> {
         try {
             const student = await this.repository.fetchStudentInfo(data.studentId);
+            console.log('student', student)
             return student;
         } catch (error) {
             throw error;
@@ -91,16 +112,29 @@ export class AdminInteractor implements I_AdminInteractor {
     }
 
 
-    blockOrUnblockTeacher(): Promise<any> {
+    async banOrUnbanClassroom(classroom:{classroomId:string}): Promise<void> {
         try {
-            throw new Error("Method not implemented.");
+            const classroomInfo = await this.repository.fetchClassroomInfo(classroom.classroomId);
+            if(!classroomInfo) throw new CostumeError(404,'Can not find the classroom you looking for.');
+            const banState = classroomInfo.banned
+            await this.repository.changeBanStateOfClassroom(classroom.classroomId,!banState);
+            return
         } catch (error) {
             throw error;
         }
     }
-    banOrUnbanClassroom(): Promise<any> {
+
+    
+    async blockOrUnblockStudent(data: { studentId: string }): Promise<void> {
         try {
-            throw new Error("Method not implemented.");
+            const student = await this.repository.fetchStudentInfo(data.studentId);
+
+            if (!student) throw new CostumeError(404, "Can not find the user you are looking for");
+
+            const status = student.blocked;
+            console.log(status)
+
+            await this.repository.toggleBlockStatusOfStudent(data.studentId, !status)
         } catch (error) {
             throw error;
         }

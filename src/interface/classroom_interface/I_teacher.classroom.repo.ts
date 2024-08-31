@@ -1,3 +1,4 @@
+import { AnnouncementsDocument } from "../../infrastructure/model/announcements.model";
 import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage } from "../../infrastructure/model/classroom.model";
 import { ExamsDocument } from "../../infrastructure/model/exam.model";
 import { PrivateChatDocument } from "../../infrastructure/model/private.chat.model";
@@ -46,5 +47,9 @@ export interface I_TeacherClassroomRepo{
 
     saveNewExam(exam:ExamsDocument):Promise<ExamsDocument>;
 
-    fetchAllExams(classroomId:string):Promise<ExamsDocument[]>
+    fetchAllExams(classroomId:string):Promise<ExamsDocument[]>;
+
+    saveNewAnnouncement(data:AnnouncementsDocument):Promise<AnnouncementsDocument>;
+
+    fetchAnnouncements(classroomId:string):Promise<AnnouncementsDocument[]|null>
 }
