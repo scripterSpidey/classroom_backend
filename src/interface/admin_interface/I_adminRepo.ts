@@ -3,6 +3,7 @@ import { ClassroomDocument } from "../../infrastructure/model/classroom.model";
 import { TeacherDocument } from "../../infrastructure/model/teacher.model";
 import {StudentDocument} from '../../infrastructure/model/student.model'
 export interface I_AdminRepo{
+
     findAdmin(data:Admin):Promise<Admin | null>;
 
     logout():Promise<Boolean>;
@@ -24,4 +25,5 @@ export interface I_AdminRepo{
     changeBanStateOfClassroom(classroomId:string,value:boolean):Promise<void>;
 
     toggleBlockStatusOfStudent(studentId:string,value:boolean):Promise<void>;
+    
 }

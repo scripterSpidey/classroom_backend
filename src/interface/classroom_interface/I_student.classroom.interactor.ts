@@ -3,6 +3,7 @@ import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage } from "../.
 import { ExamsDocument } from "../../infrastructure/model/exam.model";
 import { PrivateChatDocument } from "../../infrastructure/model/private.chat.model";
 import { WorksDocument } from "../../infrastructure/model/works.model";
+import { SubmitExamType } from "../../schema/exam.schema";
 import { saveMessageInput } from "../../schema/saveMessageSchema";
 import { SendPrivateMessageBodyType, SendPrivateMessageParamsType } from "../../schema/send.private.message.schema";
 import { SubmitWorkQueryType } from "../../schema/work.schema";
@@ -41,4 +42,8 @@ export interface I_StudentClassroomInteractor {
     getAnnouncements(classroom:ClassroomJwtPayload):Promise<AnnouncementsDocument[]|null>
 
     getAllExams(clasroom:ClassroomJwtPayload):Promise<ExamsDocument[]>
+
+    startExam(student:UserJwtPayload,classroom:ClassroomJwtPayload,exam:{examId:string}):Promise<ExamsDocument>;
+
+    submitExam(classroom:ClassroomJwtPayload,data:SubmitExamType):Promise<any>
 } 

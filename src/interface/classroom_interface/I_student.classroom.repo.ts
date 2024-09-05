@@ -1,6 +1,6 @@
 import { AnnouncementsDocument } from "../../infrastructure/model/announcements.model";
 import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage } from "../../infrastructure/model/classroom.model";
-import { ExamsDocument } from "../../infrastructure/model/exam.model";
+import { ExamAttendedType, ExamsDocument } from "../../infrastructure/model/exam.model";
 import { PrivateChatDocument } from "../../infrastructure/model/private.chat.model";
 import { StudentDocument } from "../../infrastructure/model/student.model";
 import { WorksDocument, WorkSubmissionType } from "../../infrastructure/model/works.model";
@@ -33,4 +33,12 @@ export interface I_StudentClassroomRepo {
     fetchAnnouncements(classroomId:string):Promise<AnnouncementsDocument[]|null>;
 
     fetchAllExams(classroomId:string):Promise<ExamsDocument[]>;
+
+    saveNewExamCandidate(classroomId:string,examId:string,studentId:string):Promise<void>;
+
+    fetchExamDetails(clasroomId:string,examId:string):Promise<ExamsDocument|null>;
+
+    saveAnswers(clasroomId: string, examId: string,data:ExamAttendedType):Promise<any>;
+
+    findSubmission(clasroomId: string, examId: string,studentId:string):Promise<any>
 }

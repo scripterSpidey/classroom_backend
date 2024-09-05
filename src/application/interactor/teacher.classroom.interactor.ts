@@ -24,9 +24,10 @@ import { CreateWorkBodyType, UpdateWorkMarkBodyType, UpdateWorkMarkParamsType } 
 import { WorkFileType, WorksDocument, WorkType } from "../../infrastructure/model/works.model";
 import mongoose, { mongo } from "mongoose";
 import { I_DayJS } from "../../interface/service_interface/I_DayJS";
-import { CreateExamType } from "../../schema/exam.schema";
-import { ExamQuestionType, ExamsDocument, QuestionPaperEnum, QuestionTypeEnum } from "../../infrastructure/model/exam.model";
+import { CreateExamType, PublishExamBodyType } from "../../schema/exam.schema";
+import { ExamAttendedType, ExamQuestionType, ExamsDocument, QuestionPaperEnum, QuestionTypeEnum } from "../../infrastructure/model/exam.model";
 import { AnnouncementsDocument, NotificationTypeEnum } from "../../infrastructure/model/announcements.model";
+import { CopyObjectOutputFilterSensitiveLog } from "@aws-sdk/client-s3";
 
 export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor {
 
@@ -108,7 +109,7 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
                 throw new CostumeError(403, "Really? Are you trying to steal others stuff? You dont have access to this classroom!");
             }
 
-            if(classroomDetails.banned) throw new CostumeError(403,"This classroom has been temporarily banned!")
+            if (classroomDetails.banned) throw new CostumeError(403, "This classroom has been temporarily banned!")
 
             const payload = {
                 class_teacher_id: classroomDetails.class_teacher_id,
@@ -199,7 +200,7 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
     async removeStudent(data: studentIdParamType, classroom: { classroom_id: string }): Promise<void> {
         try {
             await this.teacherClassroomRepo.deleteStudentFromClassroom(data.student_id, classroom.classroom_id);
-            
+
         } catch (error) {
             throw error
         }
@@ -316,7 +317,7 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
 
             if (!material) throw new CostumeError(503, "Failed to upload material. Please try again later!");
 
-            const newAnnouncement:AnnouncementsDocument={
+            const newAnnouncement: AnnouncementsDocument = {
                 classroom_id: new mongoose.Types.ObjectId(clasroom.classroom_id),
                 type: NotificationTypeEnum.MATERIAL,
                 content: `New material ${material.title} has been published.`,
@@ -327,7 +328,7 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
 
             const announcement = await this.teacherClassroomRepo.saveNewAnnouncement(newAnnouncement);
 
-            this.socketServices.emitAnnouncement(clasroom.classroom_id,announcement)
+            this.socketServices.emitAnnouncement(clasroom.classroom_id, announcement)
 
             return material
 
@@ -343,7 +344,7 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
             return materials;
         } catch (error) {
             throw error;
-        } 
+        }
     }
 
     async deleteMaterial(user: UserJwtPayload, clasroom: ClassroomJwtPayload, material: DeleteMaterialQueryType): Promise<void> {
@@ -381,11 +382,11 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
                 description: body.description
             }
 
-           
+
 
             const work = await this.teacherClassroomRepo.saveNewWork(newWork);
 
-            const newAnnouncement:AnnouncementsDocument={
+            const newAnnouncement: AnnouncementsDocument = {
                 classroom_id: new mongoose.Types.ObjectId(classroom.classroom_id),
                 type: NotificationTypeEnum.WORK,
                 content: `New ${work.work_type} ${work.topic} has been published.`,
@@ -396,7 +397,7 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
 
             const announcement = await this.teacherClassroomRepo.saveNewAnnouncement(newAnnouncement);
 
-            this.socketServices.emitAnnouncement(classroom.classroom_id,announcement)
+            this.socketServices.emitAnnouncement(classroom.classroom_id, announcement)
 
             return work;
 
@@ -429,49 +430,50 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
             console.log(exam)
             const utcStartTime = this.dayJS.convertToUTC(exam.startTime);
             const utcEndTime = this.dayJS.convertToUTC(exam.lastTimeToStart);
-            if(utcStartTime === 'Invalid date' || utcEndTime === 'Invalid date'){
+            if (utcStartTime === 'Invalid date' || utcEndTime === 'Invalid date') {
                 console.log('invalid')
-                throw new CostumeError(400,'Invalid date format')
+                throw new CostumeError(400, 'Invalid date format')
             }
 
-            const questionPaperType = exam.questionPaperType == QuestionPaperEnum.ADD ? QuestionPaperEnum.ADD:
+            const questionPaperType = exam.questionPaperType == QuestionPaperEnum.ADD ? QuestionPaperEnum.ADD :
                 exam.questionPaperType == QuestionPaperEnum.BANK ? QuestionPaperEnum.BANK :
-                QuestionPaperEnum.UPLOAD;
+                    QuestionPaperEnum.UPLOAD;
 
-            console.log(utcStartTime,utcEndTime);
+            console.log(utcStartTime, utcEndTime);
 
-            const questions:ExamQuestionType[] = exam.questions.map(question=>{
-                const type = question.type === QuestionTypeEnum.MCQ ? QuestionTypeEnum.MCQ:
-                question.type === QuestionTypeEnum.DESCRIPTIVE ? QuestionTypeEnum.DESCRIPTIVE:
-                question.type === QuestionTypeEnum.TOF ? QuestionTypeEnum.TOF:
-                QuestionTypeEnum.FILL_BLANKS;
-                return{
-                    question:question.question,
-                    type:type,
-                    mark:Number(question.mark),
-                    options:question.options ? question.options : [],
-                    answer:question.answer
+            const questions: ExamQuestionType[] = exam.questions.map(question => {
+                const type = question.type === QuestionTypeEnum.MCQ ? QuestionTypeEnum.MCQ :
+                    question.type === QuestionTypeEnum.DESCRIPTIVE ? QuestionTypeEnum.DESCRIPTIVE :
+                        question.type === QuestionTypeEnum.TOF ? QuestionTypeEnum.TOF :
+                            QuestionTypeEnum.FILL_BLANKS;
+                return {
+                    question: question.question,
+                    type: type,
+                    mark: Number(question.mark),
+                    options: question.options ? question.options : [],
+                    answer: question.answer
                 }
             })
 
             const newExam: ExamsDocument = {
                 classroom_id: new mongoose.Types.ObjectId(classroom.classroom_id),
                 title: exam.title,
-                instructions: "",
+                instructions: exam.instructions || '',
                 issued_at: new Date(),
                 total_marks: exam.questions.reduce((acc, curr) => acc += Number(curr.mark), 0),
                 total_questions: exam.questions.length,
                 start_time: this.dayJS.convertToUTC(exam.startTime) as Date,
                 last_time_to_start: this.dayJS.convertToUTC(exam.lastTimeToStart) as Date,
                 duration: Number(exam.duration),
-                question_paper_type:questionPaperType,
+                question_paper_type: questionPaperType,
                 attended: [],
-                questions: questions
+                questions: questions,
+                started_students: []
             }
 
             const saveExam = await this.teacherClassroomRepo.saveNewExam(newExam);
 
-            const newAnnouncement:AnnouncementsDocument={
+            const newAnnouncement: AnnouncementsDocument = {
                 classroom_id: new mongoose.Types.ObjectId(classroom.classroom_id),
                 type: NotificationTypeEnum.EXAM,
                 content: `New exam:  ${exam.title} has been published.`,
@@ -482,7 +484,7 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
 
             const announcement = await this.teacherClassroomRepo.saveNewAnnouncement(newAnnouncement);
 
-            this.socketServices.emitAnnouncement(classroom.classroom_id,announcement)
+            this.socketServices.emitAnnouncement(classroom.classroom_id, announcement)
 
             return saveExam;
         } catch (error) {
@@ -499,7 +501,7 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
         }
     }
 
-    async getAnnouncements(clasroom: ClassroomJwtPayload): Promise<AnnouncementsDocument[]|null> {
+    async getAnnouncements(clasroom: ClassroomJwtPayload): Promise<AnnouncementsDocument[] | null> {
         try {
             return await this.teacherClassroomRepo.fetchAnnouncements(clasroom.classroom_id)
         } catch (error) {
@@ -507,5 +509,16 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
 
         }
     }
+
+    async publishExamResult(examDetails: { examId: string }, data: PublishExamBodyType): Promise<any> {
+        try {
+            const { totalMark, status } = data
+            await this.teacherClassroomRepo.updateExamResult(examDetails.examId,data.studentId,data.totalMark,data.status)
+            console.log(data)
+        } catch (error) {
+            throw error
+        }
+    }
+
 
 }

@@ -17,6 +17,7 @@ import { submitWorkSchema } from "../../schema/work.schema";
 import { UniqueIDGenerator } from "../../application/service/unique.id";
 import { customAlphabet } from "nanoid";
 import { AWSS3Bucket } from "../../application/service/aws.s3.bucket";
+import { submitExamSchema } from "../../schema/exam.schema";
 
 const storage = multer.memoryStorage()
 const upload = multer({ storage });
@@ -96,7 +97,12 @@ router.route('/work')
         studentClassroomGateway.onSubmitWork.bind(studentClassroomGateway) as RequestHandler);
 
 router.route('/exams')
-    .get(studentClassroomGateway.onGetAllExams.bind(studentClassroomGateway) as RequestHandler)
+    .get(studentClassroomGateway.onGetAllExams.bind(studentClassroomGateway) as RequestHandler);
+
+router.route('/exam/:examId')
+    .patch(studentClassroomGateway.onStartExam.bind(studentClassroomGateway) as RequestHandler)
+    .post(validate(submitExamSchema),
+        studentClassroomGateway.onSubmitExam.bind(studentClassroomGateway) as RequestHandler)
 
 router.route('/announcements')
     .get(studentClassroomGateway.onGetAnnouncements.bind(studentClassroomGateway) as RequestHandler)

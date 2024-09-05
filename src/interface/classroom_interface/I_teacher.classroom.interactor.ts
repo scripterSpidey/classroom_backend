@@ -5,7 +5,7 @@ import { PrivateChatDocument } from "../../infrastructure/model/private.chat.mod
 import { StudentDocument } from "../../infrastructure/model/student.model";
 import { WorksDocument } from "../../infrastructure/model/works.model";
 import { CreateClassroomInputType } from "../../schema/create.classroom.schema";
-import { CreateExamType } from "../../schema/exam.schema";
+import { CreateExamType, PublishExamBodyType } from "../../schema/exam.schema";
 import { studentIdParamType } from "../../schema/remove.student.schema";
 import { saveMessageInput } from "../../schema/saveMessageSchema";
 import { SendPrivateMessageBodyType, SendPrivateMessageParamsType } from "../../schema/send.private.message.schema";
@@ -64,5 +64,7 @@ export interface I_TeacherClassroomInteractor {
 
     getAllExams(clasroom:ClassroomJwtPayload):Promise<ExamsDocument[]>
 
-    getAnnouncements(classroom:ClassroomJwtPayload):Promise<AnnouncementsDocument[]|null>
+    getAnnouncements(classroom:ClassroomJwtPayload):Promise<AnnouncementsDocument[]|null>;
+
+    publishExamResult(examDetails:{examId:string},data:PublishExamBodyType): Promise<any>;
 }

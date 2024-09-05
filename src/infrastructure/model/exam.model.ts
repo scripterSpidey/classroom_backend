@@ -1,4 +1,6 @@
 import mongoose, { Model } from "mongoose";
+import { bool } from "sharp";
+import { boolean } from "zod";
 
 export enum QuestionTypeEnum {
     MCQ = 'mcq',
@@ -32,13 +34,17 @@ export interface ExamsDocument {
     last_time_to_start: Date,
     duration: number,
     question_paper_type: QuestionPaperEnum,
+    started_students?:mongoose.Types.ObjectId[],
     attended: Array<{
         student_id: mongoose.Types.ObjectId,
+        answers:Array<string>,
         student_name: string,
-        obtained_mark: number,
-        correct_answers: number,
-        wrong_answers: number,
-        result: ExamResultEnum,
+        obtained_mark?: number,
+        correct_answers?: number,
+        wrong_answers?: number,
+        result?: ExamResultEnum,
+        valuated:boolean,
+        responses?:boolean[]
     }>,
     questions: Array<{
         question: string,
@@ -46,7 +52,8 @@ export interface ExamsDocument {
         mark: number,
         options: string[],
         answer?: string
-    }>
+    }>,
+    
 }
 
 export type ExamQuestionType = ExamsDocument['questions'][number];
@@ -63,13 +70,17 @@ const examsSchema: mongoose.Schema = new mongoose.Schema<ExamsDocument>({
     last_time_to_start:{type:Date,required:true},
     duration:{ type: Number, required: true},
     question_paper_type:{type:String,enum:Object.values(QuestionPaperEnum)},
+    started_students:[{type:mongoose.Schema.Types.ObjectId,ref:'students'}],
     attended:[{
         student_id: {type:mongoose.Schema.Types.ObjectId,ref:'students',required:true},
         student_name: { type: String, required: true },
+        answers:[{type:String}],
+        responses:[{type:Boolean}], 
         obtained_mark: { type: Number, required: true },
         correct_answers: { type: Number, required: true },
         wrong_answers: { type: Number, required: true },
         result: {type:String,enum:Object.values(ExamResultEnum)},
+        valuated:{type:Boolean,default:false}
     }],
     questions:[{
         question: { type: String, required: true },
@@ -78,7 +89,7 @@ const examsSchema: mongoose.Schema = new mongoose.Schema<ExamsDocument>({
         options: [String],
         answer:  { type: String, default: '' }
     }]
-})
+},{timestamps:true})
 
 export const ExamsModel: Model<ExamsDocument>=
     mongoose.model<ExamsDocument>('exams',examsSchema)

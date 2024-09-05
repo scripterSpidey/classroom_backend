@@ -27,7 +27,6 @@ type OnlineUsersType={
 }
 
 const onlineUsers:OnlineUsersType = {}
-
 const userSocketMap: { [userId: string]: string } = {}
 
 io.on('connection',(socket)=>{

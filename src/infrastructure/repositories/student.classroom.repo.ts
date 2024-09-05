@@ -7,7 +7,7 @@ import { CostumeError } from "../../utils/costume.error";
 import { PrivateChatDocument, PrivateChatModel } from "../model/private.chat.model";
 import { WorksDocument, WorksModel, WorkSubmissionType } from "../model/works.model";
 import { AnnouncementsDocument, AnnouncementsModel } from "../model/announcements.model";
-import { ExamsDocument, ExamsModel } from "../model/exam.model";
+import { ExamAttendedType, ExamsDocument, ExamsModel } from "../model/exam.model";
 
 export class StudentClassroomRepo implements I_StudentClassroomRepo {
 
@@ -154,7 +154,7 @@ export class StudentClassroomRepo implements I_StudentClassroomRepo {
         }
     }
 
-    async saveSubmittedWork(classroomId: string, workId: string, work: WorkSubmissionType): Promise<WorksDocument|null> {
+    async saveSubmittedWork(classroomId: string, workId: string, work: WorkSubmissionType): Promise<WorksDocument | null> {
         try {
             return await WorksModel.findOneAndUpdate(
                 {
@@ -178,24 +178,72 @@ export class StudentClassroomRepo implements I_StudentClassroomRepo {
         }
     }
 
-    
+
     async fetchAllExams(classroomId: string): Promise<ExamsDocument[]> {
         try {
-            
-            const exams = await  ExamsModel.find({classroom_id:classroomId});
-           
+
+            const exams = await ExamsModel.find({ classroom_id: classroomId })
+                .sort({ createdAt: -1 });
+            console.log(exams)
             return exams
         } catch (error) {
             throw error
         }
     }
 
-    async fetchAnnouncements(classroomId: string): Promise<AnnouncementsDocument[]|null> {
+    async fetchAnnouncements(classroomId: string): Promise<AnnouncementsDocument[] | null> {
         try {
-           return await AnnouncementsModel.find({classroom_id:classroomId})
-           .sort({createdAt:-1})
+            return await AnnouncementsModel.find({ classroom_id: classroomId })
+                .sort({ createdAt: -1 })
         } catch (error) {
             throw error
         }
     }
+
+    async saveNewExamCandidate(clasroomId: string, examId: string, studentId: string): Promise<void> {
+        try {
+            await ExamsModel.findOneAndUpdate(
+                { classroom_id: clasroomId, _id: examId },
+                { $addToSet: { started_students: studentId } }
+            )
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async fetchExamDetails(clasroomId: string, examId: string): Promise<ExamsDocument | null> {
+        try {
+            return await ExamsModel.findOne({ _id: examId, classroom_id: clasroomId });
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async saveAnswers(clasroomId: string, examId: string, data: ExamAttendedType): Promise<any> {
+        try {
+
+            const exam = await ExamsModel.findOneAndUpdate(
+                { _id: examId, classroom_id: clasroomId },
+                { $addToSet: { attended: data } },
+                { new: true }
+            )
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async findSubmission(clasroomId: string, examId: string,studentId:string): Promise<any> {
+        try {
+            return await ExamsModel.findOne({ 
+                _id: examId, 
+                classroom_id: clasroomId,
+                "attended.student_id":studentId
+             });
+        } catch (error) {
+            throw error
+        }
+    }
+
+
+
 }

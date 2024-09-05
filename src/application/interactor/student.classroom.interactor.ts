@@ -21,7 +21,8 @@ import { AWS_S3_BUCKET_NAME } from "../../infrastructure/constants/env";
 import { I_S3Bucket } from "../../interface/service_interface/I_S3.bucket";
 import mongoose from "mongoose";
 import { AnnouncementsDocument } from "../../infrastructure/model/announcements.model";
-import { ExamsDocument } from "../../infrastructure/model/exam.model";
+import { ExamAttendedType, ExamsDocument } from "../../infrastructure/model/exam.model";
+import { SubmitExamType } from "../../schema/exam.schema";
 
 export class StudentClassroomInteractor implements I_StudentClassroomInteractor {
 
@@ -92,7 +93,7 @@ export class StudentClassroomInteractor implements I_StudentClassroomInteractor 
 
             if (!classroom) throw new CostumeError(403, "You are not a participant of this classroom");
 
-            if(classroom.banned) throw new CostumeError(403,"This classroom has been temporarily banned!")
+            if (classroom.banned) throw new CostumeError(403, "This classroom has been temporarily banned!")
 
             classroom.students.forEach(student => {
                 if (student.student_id == user.userId && student.blocked) {
@@ -212,7 +213,7 @@ export class StudentClassroomInteractor implements I_StudentClassroomInteractor 
         }
     }
 
-    async submitWork(classroom: ClassroomJwtPayload, user: UserJwtPayload, file: Express.Multer.File, workId: SubmitWorkQueryType): Promise<WorkSubmissionType[]|null> {
+    async submitWork(classroom: ClassroomJwtPayload, user: UserJwtPayload, file: Express.Multer.File, workId: SubmitWorkQueryType): Promise<WorkSubmissionType[] | null> {
         try {
 
             const [work, student] = await Promise.all([
@@ -231,7 +232,7 @@ export class StudentClassroomInteractor implements I_StudentClassroomInteractor 
             const fileName = `worksubmission-${classroom.classroom_id}-${workId.workId}-${user.userId}`;
             const fileUrl = `https://${AWS_S3_BUCKET_NAME}.s3.amazonaws.com/works/submissions/${fileName}`
 
-            await this.s3Bucket.uploadWorkSubmissionFile(fileName,file.buffer,file.mimetype);
+            await this.s3Bucket.uploadWorkSubmissionFile(fileName, file.buffer, file.mimetype);
 
             const newSubmission: WorkSubmissionType = {
                 student_id: new mongoose.Types.ObjectId(user.userId),
@@ -241,9 +242,9 @@ export class StudentClassroomInteractor implements I_StudentClassroomInteractor 
                 submitted_file_type: file.mimetype == 'application/pdf' ? WorkFileType.PDF : WorkFileType.IMAGE,
                 marks: 0
             }
-            
-            const submittedWork = await this.classroomRepo.saveSubmittedWork(classroom.classroom_id,workId.workId,newSubmission);
-            if(!submittedWork) throw new CostumeError(403,'You have already submitted this work');
+
+            const submittedWork = await this.classroomRepo.saveSubmittedWork(classroom.classroom_id, workId.workId, newSubmission);
+            if (!submittedWork) throw new CostumeError(403, 'You have already submitted this work');
 
             console.log(submittedWork)
             return submittedWork.submissions;
@@ -261,7 +262,7 @@ export class StudentClassroomInteractor implements I_StudentClassroomInteractor 
         }
     }
 
-    async getAnnouncements(clasroom: ClassroomJwtPayload): Promise<AnnouncementsDocument[]|null> {
+    async getAnnouncements(clasroom: ClassroomJwtPayload): Promise<AnnouncementsDocument[] | null> {
         try {
             return await this.classroomRepo.fetchAnnouncements(clasroom.classroom_id)
         } catch (error) {
@@ -270,4 +271,49 @@ export class StudentClassroomInteractor implements I_StudentClassroomInteractor 
         }
     }
 
-}  
+    async startExam(user: UserJwtPayload, clasroom: ClassroomJwtPayload, exam: { examId: string }): Promise<ExamsDocument> {
+        try {
+            const examDetails = await this.classroomRepo.fetchExamDetails(clasroom.classroom_id, exam.examId);
+            if (!examDetails) throw new CostumeError(404, "This exam details are not available");
+            if (examDetails.started_students?.includes(user.userId as ObjectId)) {
+                throw new CostumeError(404, "You have already attended this exam.")
+            }
+            console.log(clasroom);
+            await this.classroomRepo.saveNewExamCandidate(clasroom.classroom_id, exam.examId, clasroom.student_id);
+            return examDetails;
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async submitExam(classroom: ClassroomJwtPayload, data: SubmitExamType): Promise<any> {
+        try {
+            const student = await this.studentRepo.findStudentById(classroom.student_id);
+            const exam = await this.classroomRepo.fetchExamDetails(classroom.classroom_id, data.examId)
+            if (!exam) throw new CostumeError(404, "Can not find the exam you are looking for.")
+            const endTime = new Date(data.endedAt).getTime();
+            const deadline = new Date(data.startedAt).getTime() + (exam.duration * 60 * 1000)
+            if (endTime > deadline) {
+                throw new CostumeError(403, "Submission time is over.")
+            }
+            const alreadySubmitted = exam.attended.some(submission => String(submission.student_id) == classroom.student_id);
+
+            if (alreadySubmitted) {
+                throw new CostumeError(403, "You have already submitted this once.")
+            }
+            const submission: ExamAttendedType = {
+                student_id: new mongoose.Types.ObjectId(classroom.student_id),
+                answers: data.answers,
+                student_name: student?.name!,
+                valuated:false
+            };
+
+            await this.classroomRepo.saveAnswers(classroom.classroom_id, data.examId, submission);
+
+        } catch (error) {
+            throw error
+
+        }
+    }
+
+}   

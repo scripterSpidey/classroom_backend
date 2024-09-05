@@ -134,12 +134,12 @@ export class TeacherClassroomRepo implements I_TeacherClassroomRepo {
 
             await StudentModel.findByIdAndUpdate(
                 student_id,
-                { 
-                    $pull: { 
-                        classrooms: { classroom_id: classroom_id } 
-                    } 
+                {
+                    $pull: {
+                        classrooms: { classroom_id: classroom_id }
+                    }
                 },
-                { new: true } 
+                { new: true }
             )
 
         } catch (error) {
@@ -307,7 +307,7 @@ export class TeacherClassroomRepo implements I_TeacherClassroomRepo {
         }
     }
 
-    async saveNewAnnouncement(data:AnnouncementsDocument):Promise<AnnouncementsDocument>{
+    async saveNewAnnouncement(data: AnnouncementsDocument): Promise<AnnouncementsDocument> {
         try {
             return await new AnnouncementsModel(data).save()
         } catch (error) {
@@ -347,7 +347,7 @@ export class TeacherClassroomRepo implements I_TeacherClassroomRepo {
         }
     }
 
-    async saveNewExam(exam:ExamsDocument): Promise<ExamsDocument> {
+    async saveNewExam(exam: ExamsDocument): Promise<ExamsDocument> {
         try {
             const newExam = await new ExamsModel(exam).save();
             return newExam
@@ -358,21 +358,41 @@ export class TeacherClassroomRepo implements I_TeacherClassroomRepo {
 
     async fetchAllExams(classroomId: string): Promise<ExamsDocument[]> {
         try {
-            
-            const exams = await  ExamsModel.find({classroom_id:classroomId});
-           
+
+            const exams = await ExamsModel.find({ classroom_id: classroomId });
+
             return exams
         } catch (error) {
             throw error
         }
     }
 
-    async fetchAnnouncements(classroomId: string): Promise<AnnouncementsDocument[]|null> {
+    async fetchAnnouncements(classroomId: string): Promise<AnnouncementsDocument[] | null> {
         try {
-           return await AnnouncementsModel.find({classroom_id:classroomId})
-           .sort({createdAt:-1})
+            return await AnnouncementsModel.find({ classroom_id: classroomId })
+                .sort({ createdAt: -1 })
         } catch (error) {
             throw error
         }
     }
+
+    async updateExamResult(examId: string, studentId: string, totalMark: number, status: string): Promise<any> {
+        try {
+            const update = await ExamsModel.findOneAndUpdate(
+                { _id: examId, "attended.student_id": studentId },
+                {
+                    $set: {
+                        'attended.$.obtained_mark': totalMark,
+                        'attended.$.result': status,
+                        'attended.$.valuated': true
+                    }
+                },
+                { new: true }
+            )
+            console.log(update)
+        } catch (error) {
+            throw error
+        }
+    }
+
 }

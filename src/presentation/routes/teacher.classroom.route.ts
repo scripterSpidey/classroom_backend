@@ -26,7 +26,7 @@ import multer from "multer";
 import { AWSS3Bucket } from "../../application/service/aws.s3.bucket";
 import { createWorkSchema, updateWorkMarkSchema } from "../../schema/work.schema";
 import { DayJS } from "../../application/service/day.js";
-import { createExamSchema } from "../../schema/exam.schema";
+import { createExamSchema, publishExamSchema } from "../../schema/exam.schema";
 
 const router = express.Router();
 
@@ -133,6 +133,10 @@ router.route('/exams')
     .get(teacherClassroomGateway.onGetAllExams.bind(teacherClassroomGateway) as RequestHandler)
     .post(validate(createExamSchema),
         teacherClassroomGateway.onCreateExam.bind(teacherClassroomGateway) as RequestHandler);
+router.route('/exam/:examId')
+    .patch( 
+        validate(publishExamSchema),
+        teacherClassroomGateway.onPublishExamResult.bind(teacherClassroomGateway) as RequestHandler)
 
 router.route('/announcements')
     .get(teacherClassroomGateway.onGetAnnouncements.bind(teacherClassroomGateway) as RequestHandler)

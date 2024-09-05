@@ -8,6 +8,7 @@ import { ClassroomJwtPayload } from "../middleware/classroom.auth.middleware";
 import { UploadMaterialBodyType } from "../../schema/upload.material.schema";
 import { SubmitWorkQueryType } from "../../schema/work.schema";
 import { UserJwtPayload } from "../../interface/service_interface/I_jwt";
+import { SubmitExamType } from "../../schema/exam.schema";
 
 export class StudentClassroomGateway {
     private interactor: I_StudentClassroomInteractor;
@@ -185,5 +186,45 @@ export class StudentClassroomGateway {
             next(error)
         }
     }
+
+    async onGetExamDetails(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const classroom = req.classroom as ClassroomJwtPayload
+            const announcements = await this.interactor.getAnnouncements(classroom)
+            console.log(announcements)
+            res.status(200).json(announcements)
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    async onStartExam(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const clasroom = req.classroom as ClassroomJwtPayload;
+            const params = req.params as {examId:string};
+            const user = req.user as UserJwtPayload;
+            const exam  = await this.interactor.startExam(user,clasroom,params);
+
+            res.status(200).json(exam)
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    async onSubmitExam(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const clasroom = req.classroom as ClassroomJwtPayload;
+            const params = req.params as {examId:string};
+            const user = req.user as UserJwtPayload;
+            const exam = req.body as SubmitExamType
+            
+            await this.interactor.submitExam(clasroom,exam)
+
+            res.status(200).json(exam)
+        } catch (error) {
+            next(error)
+        }
+    }
+
     
 }

@@ -1,4 +1,4 @@
-import { TypeOf, z } from "zod";
+import { string, TypeOf, z } from "zod";
 
 const questionSchema = z.object({
     question: z.string({
@@ -32,5 +32,43 @@ export const createExamSchema = z.object({
     })
 })
 
+
+export const submitExamSchema = z.object({
+    body:z.object({
+        examId:z.string({
+            required_error:"Exam id is required"
+        }),
+        answers:z.array(z.string({
+            required_error:'Each answer must be a string'
+        })),
+        startedAt:z.string({
+            required_error:'Staring time is required'
+        }),
+        endedAt:z.string({
+            required_error:"Ending time is required"
+        })
+
+    })
+})
+
+export const publishExamSchema = z.object({
+    body:z.object({
+        studentId:z.string({
+            required_error:'Student id is required',
+            
+        }),
+        totalMark:z.number({
+            required_error:'Total mark is required'
+        }),
+        response:z.array(z.boolean()).optional(),
+        marks:z.array(z.number()).optional(),
+        status:z.string({
+            required_error:"Status is required"
+        })
+    })
+})
+
 export type CreateExamQuestionType = TypeOf<typeof questionSchema>
-export type CreateExamType = TypeOf<typeof createExamSchema>['body']
+export type CreateExamType = TypeOf<typeof createExamSchema>['body'];
+export type SubmitExamType = TypeOf<typeof submitExamSchema>['body'];
+export type PublishExamBodyType = TypeOf<typeof publishExamSchema>['body']

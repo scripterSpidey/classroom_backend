@@ -56,7 +56,7 @@ export class ClasroomAuthInteractor implements I_ClassroomAuthInteractor {
                 const { student_id,classroom_id } = verifyToken.payload as ClassroomJwtPayload
                 const classroom = await this.studentClassroomRepo.fetchClassroomDetailsForStudent(classroom_id,student_id);
                 
-                console.log('student: ',classroom)
+               
 
                 if (student_id != user.userId)
                     throw new CostumeError(403, "You donot have the permission to access this clasroom contents");

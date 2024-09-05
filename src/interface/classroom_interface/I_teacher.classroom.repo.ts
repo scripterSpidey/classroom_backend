@@ -51,5 +51,7 @@ export interface I_TeacherClassroomRepo{
 
     saveNewAnnouncement(data:AnnouncementsDocument):Promise<AnnouncementsDocument>;
 
-    fetchAnnouncements(classroomId:string):Promise<AnnouncementsDocument[]|null>
+    fetchAnnouncements(classroomId:string):Promise<AnnouncementsDocument[]|null>;
+
+    updateExamResult(examId: string,studentId:string,totalMark:number,status:string): Promise<any> 
 }

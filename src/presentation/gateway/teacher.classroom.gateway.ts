@@ -10,7 +10,7 @@ import { ClassroomJwtPayload } from "../middleware/classroom.auth.middleware";
 import { DeleteMaterialQueryType, UploadMaterialBodyType } from "../../schema/upload.material.schema";
 import { UserJwtPayload } from "../../interface/service_interface/I_jwt";
 import { CreateWorkBodyType, CreateWorkFileType, UpdateWorkMarkBodyType, UpdateWorkMarkParamsType } from "../../schema/work.schema";
-import { CreateExamType } from "../../schema/exam.schema";
+import { CreateExamType, PublishExamBodyType } from "../../schema/exam.schema";
 
 
 
@@ -285,6 +285,17 @@ export class TeacherClassroomGateway {
             const announcements = await this.interactor.getAnnouncements(classroom)
             console.log(announcements)
             res.status(200).json(announcements)
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    async onPublishExamResult(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const params = req.params as {examId:string}
+            const body = req.body as PublishExamBodyType
+            await this.interactor.publishExamResult(params,body)
+            res.status(200).json('announcements')
         } catch (error) {
             next(error)
         }
