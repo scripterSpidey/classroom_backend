@@ -79,8 +79,9 @@ export class AdminGateway {
 
     async onBLockTeacher(req: Request, res: Response, next: NextFunction) {
         try {
+            const body = req.body as {reason:string}
             const params = req.params as { teacherId: string }
-            await this.interactor.blockOrUnblockTeacher(params)
+            await this.interactor.blockOrUnblockTeacher(params,body)
             res.status(200).json({blocked:true})
         } catch (error) {
             next(error)
@@ -111,9 +112,9 @@ export class AdminGateway {
 
     async onBanOrUnbanClassroom(req: Request, res: Response, next: NextFunction) {
         try {
-          
+            const body = req.body as {reason:string}
             const params = req.params as {classroomId:string}
-            await this.interactor.banOrUnbanClassroom(params)
+            await this.interactor.banOrUnbanClassroom(params,body)
             res.status(200).json('classroom')
         } catch (error) {
             next(error)
@@ -122,8 +123,9 @@ export class AdminGateway {
 
     async onBlockOrUnblockStudent(req: Request, res: Response, next: NextFunction) {
         try {
+            const body = req.body as {reason:string}
             const params = req.params as {studentId:string}
-            await this.interactor.blockOrUnblockStudent(params)
+            await this.interactor.blockOrUnblockStudent(params,body)
             res.status(200).json('classroom')
         } catch (error) {
             next(error)

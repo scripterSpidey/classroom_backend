@@ -23,3 +23,7 @@ export const AWS_S3_BUCKET_NAME = getEnv("AWS_S3_BUCKET_NAME")
 export const AWS_S3_BUCKET_REGION =getEnv("AWS_S3_BUCKET_REGION")
 export const AWS_S3_BUCKET_ACCESS_KEY = getEnv("AWS_S3_BUCKET_ACCESS_KEY")
 export const AWS_S3_BUCKET_SECRET_KEY = getEnv("AWS_S3_BUCKET_SECRET_KEY")
+
+//Zego cloud
+export const ZEGO_APP_ID = getEnv('ZEGO_APP_ID')
+export const ZEGO_SERVER_SECRET = getEnv("ZEGO_SERVER_SECRET")

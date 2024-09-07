@@ -6,4 +6,5 @@ export interface I_SocketServices{
     emitClassroomMessage(classroomId:string,message:ClassroomMessage):void;
     emitPrivateMessage(userId:string,message:PrivateChatDocument):void;
     emitAnnouncement(classroomId:string,announcement:AnnouncementsDocument):void;
+    emitLiveClassStartedMessage(classroomId:string,liveClassTitle:string);
 }

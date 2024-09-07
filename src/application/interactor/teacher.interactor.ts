@@ -308,17 +308,17 @@ export class TeacherInteractor implements I_TeacherInteractor {
             if (!email) throw new CostumeError(400, "Email should be provided");
 
             const teacher = await this.repository.findTeacher(email);
-            console.log(teacher)
+            
             if (!teacher) throw new CostumeError(404, "You are not a registered user");
 
             const resetPasswordToken = crypto.randomBytes(32).toString('hex');
             const expiresAt = new Date();
             expiresAt.setTime(expiresAt.getTime() + 30 * 60 * 1000);
-            console.log(expiresAt)
+           
             await this.repository.saveResetPasswordToken(String(teacher._id), resetPasswordToken, expiresAt);
 
             const resetPasswordLink = `${API_ORIGIN}/teacher/resetPassword/${resetPasswordToken}`;
-            await this.nodemailer.sendResetPasswordMail(teacher.email, resetPasswordLink);
+            this.nodemailer.sendResetPasswordMail(teacher.email, resetPasswordLink);
 
             return
         } catch (error) {
@@ -332,7 +332,7 @@ export class TeacherInteractor implements I_TeacherInteractor {
             if (!resetPasswordToken) throw new CostumeError(401, "You are not a autherized user");
 
             const teacher = await this.repository.findTeacherByToken(resetPasswordToken);
-            if (!teacher || teacher.resetPasswordToken != resetPasswordToken) throw new CostumeError(401, "Invalid credentials!");
+            if (!teacher || teacher.resetPasswordToken != resetPasswordToken) throw new CostumeError(401, "Invalid reset token");
 
             const hashedPassword = await this.bcrypt.encryptPassword(body.newPassword);
 

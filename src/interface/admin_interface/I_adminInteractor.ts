@@ -14,9 +14,9 @@ export interface I_AdminInteractor{
 
     getClassrooms(query:{page:number,rows:number}):Promise<ClassroomDocument[]>;
 
-    blockOrUnblockTeacher(data:{teacherId:string}):Promise<any>;
+    blockOrUnblockTeacher(data:{teacherId:string},body:{reason:string}):Promise<any>;
     
-    banOrUnbanClassroom(classroom:{classroomId:string}):Promise<void>;
+    banOrUnbanClassroom(classroom:{classroomId:string},body:{reason:string}):Promise<void>;
 
     getTeacherInfo(teacher:{teacherId:string}):Promise<TeacherDocument|null>;
 
@@ -24,6 +24,6 @@ export interface I_AdminInteractor{
 
     getClassroomInfo(classroom:{classroomId:string}):Promise<ClassroomDocument|null>;
 
-    blockOrUnblockStudent(studen:{studentId:string}):Promise<void>
+    blockOrUnblockStudent(studen:{studentId:string},body:{reason:string}):Promise<void>
 
 }

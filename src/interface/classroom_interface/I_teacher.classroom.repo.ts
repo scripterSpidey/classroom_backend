@@ -1,6 +1,7 @@
 import { AnnouncementsDocument } from "../../infrastructure/model/announcements.model";
 import { ClassroomDocument, ClassroomMaterialType, ClassroomMessage } from "../../infrastructure/model/classroom.model";
 import { ExamsDocument } from "../../infrastructure/model/exam.model";
+import { LiveClassDocument } from "../../infrastructure/model/live.class.model";
 import { PrivateChatDocument } from "../../infrastructure/model/private.chat.model";
 import { StudentClassroomDocType, StudentDocument } from "../../infrastructure/model/student.model";
 import { TeacherClassroomDocType } from "../../infrastructure/model/teacher.model";
@@ -53,5 +54,7 @@ export interface I_TeacherClassroomRepo{
 
     fetchAnnouncements(classroomId:string):Promise<AnnouncementsDocument[]|null>;
 
-    updateExamResult(examId: string,studentId:string,totalMark:number,status:string): Promise<any> 
+    updateExamResult(examId: string,studentId:string,totalMark:number,status:string): Promise<any>;
+    
+    saveNewLiveClass(data:LiveClassDocument): Promise<LiveClassDocument>;
 }

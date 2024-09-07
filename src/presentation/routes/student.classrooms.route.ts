@@ -18,6 +18,7 @@ import { UniqueIDGenerator } from "../../application/service/unique.id";
 import { customAlphabet } from "nanoid";
 import { AWSS3Bucket } from "../../application/service/aws.s3.bucket";
 import { submitExamSchema } from "../../schema/exam.schema";
+import { ZegoCloud } from "../../application/service/zegocloude";
 
 const storage = multer.memoryStorage()
 const upload = multer({ storage });
@@ -32,6 +33,7 @@ const jwt = new JWT();
 const socket = new SocketServices();
 const uniqueIdGenerator = new UniqueIDGenerator(customAlphabet);
 const s3Bucket = new AWSS3Bucket();
+const zegoCloud = new ZegoCloud()
 
 
 const studentClassroomInteractor = new StudentClassroomInteractor(
@@ -40,7 +42,8 @@ const studentClassroomInteractor = new StudentClassroomInteractor(
     jwt,
     socket,
     uniqueIdGenerator,
-    s3Bucket
+    s3Bucket,
+    zegoCloud
 )
 const studentClassroomGateway = new StudentClassroomGateway(studentClassroomInteractor);
 const classroomAuthInteractor = new ClasroomAuthInteractor(
@@ -106,5 +109,8 @@ router.route('/exam/:examId')
 
 router.route('/announcements')
     .get(studentClassroomGateway.onGetAnnouncements.bind(studentClassroomGateway) as RequestHandler)
+
+router.route('/liveClass')
+    .get(studentClassroomGateway.onGetJoiningTokenForLiveClass.bind(studentClassroomGateway) as RequestHandler)
 
 export default router;

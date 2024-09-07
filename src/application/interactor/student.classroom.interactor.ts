@@ -23,6 +23,7 @@ import mongoose from "mongoose";
 import { AnnouncementsDocument } from "../../infrastructure/model/announcements.model";
 import { ExamAttendedType, ExamsDocument } from "../../infrastructure/model/exam.model";
 import { SubmitExamType } from "../../schema/exam.schema";
+import { I_ZegoCloud } from "../../interface/service_interface/I_Zegocloud";
 
 export class StudentClassroomInteractor implements I_StudentClassroomInteractor {
 
@@ -32,19 +33,22 @@ export class StudentClassroomInteractor implements I_StudentClassroomInteractor 
     private socketService: I_SocketServices;
     private uniqueIdGenerator: I_UniqueIDGenerator;
     private s3Bucket: I_S3Bucket;
+    private zegoCloud: I_ZegoCloud;
     constructor(
         classroomRepo: I_StudentClassroomRepo,
         studentRepo: I_StudentRepo,
         jwt: I_JWT,
         socketServices: I_SocketServices,
         uniqueIdGenerator: I_UniqueIDGenerator,
-        s3Bucket: I_S3Bucket) {
+        s3Bucket: I_S3Bucket,
+        zegoCloud: I_ZegoCloud) {
         this.classroomRepo = classroomRepo
         this.studentRepo = studentRepo
         this.jwt = jwt;
         this.socketService = socketServices;
         this.uniqueIdGenerator = uniqueIdGenerator;
         this.s3Bucket = s3Bucket
+        this.zegoCloud = zegoCloud
     }
 
 
@@ -305,7 +309,7 @@ export class StudentClassroomInteractor implements I_StudentClassroomInteractor 
                 student_id: new mongoose.Types.ObjectId(classroom.student_id),
                 answers: data.answers,
                 student_name: student?.name!,
-                valuated:false
+                valuated: false
             };
 
             await this.classroomRepo.saveAnswers(classroom.classroom_id, data.examId, submission);
@@ -313,6 +317,19 @@ export class StudentClassroomInteractor implements I_StudentClassroomInteractor 
         } catch (error) {
             throw error
 
+        }
+    }
+
+    async getJoinTokenForLiveClass(user: UserJwtPayload, clasroom: ClassroomJwtPayload): Promise<string> {
+        try {
+            const { classroom_id, student_id } = clasroom;
+            if (!classroom_id || !student_id) {
+                throw new CostumeError(401, "You donot have the permission to start the class")
+            }
+            const token = this.zegoCloud.generateZegoCloudToken(student_id,classroom_id)
+            return token
+        } catch (error) {
+            throw error
         }
     }
 

@@ -45,5 +45,7 @@ export interface I_StudentClassroomInteractor {
 
     startExam(student:UserJwtPayload,classroom:ClassroomJwtPayload,exam:{examId:string}):Promise<ExamsDocument>;
 
-    submitExam(classroom:ClassroomJwtPayload,data:SubmitExamType):Promise<any>
+    submitExam(classroom:ClassroomJwtPayload,data:SubmitExamType):Promise<any>;
+
+    getJoinTokenForLiveClass(user: UserJwtPayload, clasroom: ClassroomJwtPayload): Promise<string>
 } 

@@ -40,5 +40,7 @@ export interface I_StudentClassroomRepo {
 
     saveAnswers(clasroomId: string, examId: string,data:ExamAttendedType):Promise<any>;
 
-    findSubmission(clasroomId: string, examId: string,studentId:string):Promise<any>
+    findSubmission(clasroomId: string, examId: string,studentId:string):Promise<any>;
+
+    saveJoiningStudentInfoInLiveClass(clasroomId: string,studentId:string): Promise<any>
 }

@@ -21,4 +21,7 @@ export class SocketServices implements I_SocketServices{
         io.to(classroomId).emit('announcement',announcement)
     }
 
+    emitLiveClassStartedMessage(classroomId:string,liveClassTitle:string){
+        io.to(classroomId).emit('liveClassStarted',liveClassTitle)
+    }
 }

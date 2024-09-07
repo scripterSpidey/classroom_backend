@@ -27,6 +27,8 @@ import { AWSS3Bucket } from "../../application/service/aws.s3.bucket";
 import { createWorkSchema, updateWorkMarkSchema } from "../../schema/work.schema";
 import { DayJS } from "../../application/service/day.js";
 import { createExamSchema, publishExamSchema } from "../../schema/exam.schema";
+import { ZegoCloud } from "../../application/service/zegocloude";
+import { startLiveClassSchema } from "../../schema/live.class.schema";
 
 const router = express.Router();
 
@@ -40,7 +42,8 @@ const uniqueIdGenerator = new UniqueIDGenerator(customAlphabet);
 const jwt = new JWT();
 const socket = new SocketServices();
 const s3Bucket = new AWSS3Bucket();
-const dayJS = new DayJS()
+const dayJS = new DayJS();
+const zegoCloud = new ZegoCloud()
 
 //repos
 const studentRepo = new StudentRepo();
@@ -56,7 +59,8 @@ const classroomInteractor = new TeacherClassroomInteractor(
     jwt,
     socket,
     s3Bucket,
-    dayJS);
+    dayJS,
+    zegoCloud);
 
 const classroomAuthInteractor = new ClasroomAuthInteractor(
     teacherClassroomRepo,
@@ -134,13 +138,16 @@ router.route('/exams')
     .post(validate(createExamSchema),
         teacherClassroomGateway.onCreateExam.bind(teacherClassroomGateway) as RequestHandler);
 router.route('/exam/:examId')
-    .patch( 
+    .patch(
         validate(publishExamSchema),
         teacherClassroomGateway.onPublishExamResult.bind(teacherClassroomGateway) as RequestHandler)
 
 router.route('/announcements')
     .get(teacherClassroomGateway.onGetAnnouncements.bind(teacherClassroomGateway) as RequestHandler)
 
-
-
+router.route('/liveClass')
+    .get(teacherClassroomGateway.onGetLiveClassToken.bind(teacherClassroomGateway) as RequestHandler)
+    .post(validate(startLiveClassSchema),
+        teacherClassroomGateway.onStartLiveClass.bind(teacherClassroomGateway) as RequestHandler)
+    .patch()
 export default router  

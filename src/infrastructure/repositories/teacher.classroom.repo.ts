@@ -11,6 +11,7 @@ import { PrivateChatDocument, PrivateChatModel } from "../model/private.chat.mod
 import { WorksDocument, WorksModel } from "../model/works.model";
 import { ExamsDocument, ExamsModel } from "../model/exam.model";
 import { AnnouncementsDocument, AnnouncementsModel } from "../model/announcements.model";
+import { LiveClassDocument, LiveClassModel } from "../model/live.class.model";
 
 export class TeacherClassroomRepo implements I_TeacherClassroomRepo {
 
@@ -390,6 +391,14 @@ export class TeacherClassroomRepo implements I_TeacherClassroomRepo {
                 { new: true }
             )
             console.log(update)
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async saveNewLiveClass(data:LiveClassDocument): Promise<LiveClassDocument> {
+        try {
+            return await new LiveClassModel(data).save()
         } catch (error) {
             throw error
         }

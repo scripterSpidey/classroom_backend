@@ -28,6 +28,10 @@ import { CreateExamType, PublishExamBodyType } from "../../schema/exam.schema";
 import { ExamAttendedType, ExamQuestionType, ExamsDocument, QuestionPaperEnum, QuestionTypeEnum } from "../../infrastructure/model/exam.model";
 import { AnnouncementsDocument, NotificationTypeEnum } from "../../infrastructure/model/announcements.model";
 import { CopyObjectOutputFilterSensitiveLog } from "@aws-sdk/client-s3";
+import { I_ZegoCloud } from "../../interface/service_interface/I_Zegocloud";
+import { StartLiveClassBodyType } from "../../schema/live.class.schema";
+import { LiveClassDocument } from "../../infrastructure/model/live.class.model";
+import { date } from "zod";
 
 export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor {
 
@@ -39,6 +43,7 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
     private socketServices: I_SocketServices;
     private s3Bucket: I_S3Bucket;
     private dayJS: I_DayJS
+    private zegoCloud: I_ZegoCloud;
 
     constructor(teacherClassroomRepo: I_TeacherClassroomRepo,
         studentRepo: I_StudentRepo,
@@ -47,7 +52,8 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
         jwt: I_JWT,
         socketServices: I_SocketServices,
         s3Bucket: I_S3Bucket,
-        dayJS: I_DayJS) {
+        dayJS: I_DayJS,
+        zegoCloud: I_ZegoCloud) {
         this.teacherClassroomRepo = teacherClassroomRepo
         this.studentRepo = studentRepo;
         this.teacherRepo = teacherRepo;
@@ -55,7 +61,8 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
         this.jwt = jwt;
         this.socketServices = socketServices;
         this.s3Bucket = s3Bucket;
-        this.dayJS = dayJS
+        this.dayJS = dayJS;
+        this.zegoCloud = zegoCloud
     }
 
     async createClassroom(data: CreateClassroomInputType): Promise<ClassroomDocument> {
@@ -427,7 +434,7 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
 
     async createExam(classroom: ClassroomJwtPayload, exam: CreateExamType): Promise<ExamsDocument> {
         try {
-            console.log(exam)
+
             const utcStartTime = this.dayJS.convertToUTC(exam.startTime);
             const utcEndTime = this.dayJS.convertToUTC(exam.lastTimeToStart);
             if (utcStartTime === 'Invalid date' || utcEndTime === 'Invalid date') {
@@ -513,12 +520,45 @@ export class TeacherClassroomInteractor implements I_TeacherClassroomInteractor 
     async publishExamResult(examDetails: { examId: string }, data: PublishExamBodyType): Promise<any> {
         try {
             const { totalMark, status } = data
-            await this.teacherClassroomRepo.updateExamResult(examDetails.examId,data.studentId,data.totalMark,data.status)
+            await this.teacherClassroomRepo.updateExamResult(examDetails.examId, data.studentId, data.totalMark, data.status)
             console.log(data)
         } catch (error) {
             throw error
         }
     }
 
+    async getLiveClassToken(classroom: ClassroomJwtPayload): Promise<string> {
+        try {
+            const { classroom_id, class_teacher_id } = classroom;
+
+            if (!classroom_id || !class_teacher_id) {
+                throw new CostumeError(401, "You donot have the permission to start the class")
+            }
+            const token = this.zegoCloud.generateZegoCloudToken(class_teacher_id, classroom_id);
+
+            return token
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async startLiveClass(classroom: ClassroomJwtPayload, data: StartLiveClassBodyType): Promise<LiveClassDocument> {
+        try {
+            const { classroom_id, class_teacher_id } = classroom;
+
+            const newLiveCLass: LiveClassDocument = {
+                classroom_id: new mongoose.Types.ObjectId(classroom_id),
+                started_at: new Date(),
+                title: data.title,
+                total_attendence: 0,
+                attended_students: [],
+            }
+
+            const liveClass = await this.teacherClassroomRepo.saveNewLiveClass(newLiveCLass);
+            return liveClass
+        } catch (error) {
+            throw error
+        }
+    }
 
 }

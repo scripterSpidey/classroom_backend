@@ -4,14 +4,16 @@ import { AdminInteractor } from "../../application/interactor/admin.interactor";
 import { AdminGateway } from "../../presentation/gateway/admin.gateway";
 import { JWT } from "../../application/service/jwt";
 import { AdminAuthMiddleware } from "../middleware/admin.auth.middleware";
+import { EmailService } from "../../application/service/mailer";
 
 const router = express.Router();
 
 const jwt = new JWT();
+const mailService = new EmailService()
 
 const adminAuthMiddleware = new AdminAuthMiddleware(jwt)
 const adminRepo = new AdminRepo();
-const adminInteractor = new AdminInteractor(adminRepo, jwt);
+const adminInteractor = new AdminInteractor(adminRepo, jwt,mailService);
 const adminGateway = new AdminGateway(adminInteractor);
 
 router.post('/login', adminGateway.onLogin.bind(adminGateway));

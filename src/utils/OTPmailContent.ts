@@ -14,3 +14,33 @@ export const resetPasswordLinkMail = (link:string):string=>{
            ${link} \n\n
            If you did not request this, please ignore this email and your password will remain unchanged.`
 }
+
+export const blockReasonMail = (content:string)=>{
+    return `
+        <h1 style="color: red; text-align: center;">YOU HAVE BEEN BLOCKED</h1>
+        <p>${content}</p>
+    `
+}
+
+export const banRemovedMail = (content:string)=>{
+    return `
+        <h1 style="color: green; text-align: center;">YOUR BAN HAS BEEN  REMOVED</h1>
+        <p>${content}</p>
+    `
+}
+
+export const banClassroomMail = (content:string,classroomName:string,classroomId:string)=>{
+    return `
+        <h1 style="color: red; text-align: center;">YOUR CLASSROOM HAS BEEN  BANNED</h1>
+        <h2 style =" color:'red'; ">Your classroom ${classroomName} with id ${classroomId} has been banned.</h2>
+        <p>${content}</p>
+    `
+}
+
+export const unbanClassroomMail = (content:string,classroomName:string,classroomId:string)=>{
+    return `
+        <h1 style="color: green; text-align: center;">YOUR CLASSROOM HAS BEEN  BANNED</h1>
+        <h2 style =" color:'green'; "> The ban of Your classroom ${classroomName} with id ${classroomId} has been removed.</h2>
+        <p>${content}</p>
+    `
+}

@@ -8,6 +8,7 @@ import { PrivateChatDocument, PrivateChatModel } from "../model/private.chat.mod
 import { WorksDocument, WorksModel, WorkSubmissionType } from "../model/works.model";
 import { AnnouncementsDocument, AnnouncementsModel } from "../model/announcements.model";
 import { ExamAttendedType, ExamsDocument, ExamsModel } from "../model/exam.model";
+import { LiveClassModel } from "../model/live.class.model";
 
 export class StudentClassroomRepo implements I_StudentClassroomRepo {
 
@@ -243,6 +244,15 @@ export class StudentClassroomRepo implements I_StudentClassroomRepo {
             throw error
         }
     }
+
+    async saveJoiningStudentInfoInLiveClass(clasroomId: string,studentId:string): Promise<any> {
+        try {
+           
+        } catch (error) {
+            throw error
+        }
+    }
+
 
 
 

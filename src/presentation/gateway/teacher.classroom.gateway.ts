@@ -11,6 +11,7 @@ import { DeleteMaterialQueryType, UploadMaterialBodyType } from "../../schema/up
 import { UserJwtPayload } from "../../interface/service_interface/I_jwt";
 import { CreateWorkBodyType, CreateWorkFileType, UpdateWorkMarkBodyType, UpdateWorkMarkParamsType } from "../../schema/work.schema";
 import { CreateExamType, PublishExamBodyType } from "../../schema/exam.schema";
+import { StartLiveClassBodyType } from "../../schema/live.class.schema";
 
 
 
@@ -295,7 +296,40 @@ export class TeacherClassroomGateway {
             const params = req.params as {examId:string}
             const body = req.body as PublishExamBodyType
             await this.interactor.publishExamResult(params,body)
-            res.status(200).json('announcements')
+            res.status(200).json({status:'ok'})
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    async onGetLiveClassToken(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const classroom = req.classroom as ClassroomJwtPayload;
+            
+            const response = await this.interactor.getLiveClassToken(classroom)
+            res.status(200).json(response)
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    async onStartLiveClass(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const body = req.body as StartLiveClassBodyType;
+            const clasroom = req.classroom as ClassroomJwtPayload;
+            await this.interactor.startLiveClass(clasroom,body)
+            res.status(200).json('response')
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    async onEndLiveClass(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const body = req.body as StartLiveClassBodyType;
+            const clasroom = req.classroom as ClassroomJwtPayload;
+            const response = await this.interactor.startLiveClass(clasroom,body)
+            res.status(200).json(response)
         } catch (error) {
             next(error)
         }

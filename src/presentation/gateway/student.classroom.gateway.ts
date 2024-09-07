@@ -226,5 +226,15 @@ export class StudentClassroomGateway {
         }
     }
 
+    async onGetJoiningTokenForLiveClass(req:CostumeRequest,res:Response,next:NextFunction){
+        try {
+            const classroom = req.classroom as ClassroomJwtPayload;
+            const user = req.user as UserJwtPayload;
+            const response = await this.interactor.getJoinTokenForLiveClass(user,classroom)
+            res.status(200).json(response)
+        } catch (error) {
+            next(error)
+        }
+    }
     
 }
