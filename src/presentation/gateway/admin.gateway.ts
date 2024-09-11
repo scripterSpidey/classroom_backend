@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { I_AdminInteractor } from "../../interface/admin_interface/I_adminInteractor";
 import { accessTokenExpirationTime } from '../../infrastructure/constants/appConstants'
+import { NODE_ENV } from "../../infrastructure/constants/env";
 export class AdminGateway {
     private interactor: I_AdminInteractor;
     constructor(interactor: I_AdminInteractor) {
@@ -14,6 +15,8 @@ export class AdminGateway {
             res.cookie('adminAccessToken', data.adminAccessToken, {
                 maxAge: accessTokenExpirationTime,
                 httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             })
             res.status(200).json(data)
         } catch (error) {
@@ -25,7 +28,9 @@ export class AdminGateway {
         try {
             res.cookie('adminAccessToken', '', {
                 maxAge: 0,
-                httpOnly: true
+                httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             })
             res.status(200).json({ message: 'loged out successfully' })
         } catch (error) {

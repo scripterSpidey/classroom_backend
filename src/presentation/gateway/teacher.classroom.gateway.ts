@@ -5,13 +5,14 @@ import { CostumeRequest } from "../../interface/I_express.request";
 import { I_TeacherClassroomInteractor } from "../../interface/classroom_interface/I_teacher.classroom.interactor";
 import { studentIdParamType } from "../../schema/remove.student.schema";
 import { saveMessageInput } from "../../schema/saveMessageSchema";
-import { SendPrivateMessageBodyType,SendPrivateMessageParamsType } from "../../schema/send.private.message.schema";
+import { SendPrivateMessageBodyType, SendPrivateMessageParamsType } from "../../schema/send.private.message.schema";
 import { ClassroomJwtPayload } from "../middleware/classroom.auth.middleware";
 import { DeleteMaterialQueryType, UploadMaterialBodyType } from "../../schema/upload.material.schema";
 import { UserJwtPayload } from "../../interface/service_interface/I_jwt";
 import { CreateWorkBodyType, CreateWorkFileType, UpdateWorkMarkBodyType, UpdateWorkMarkParamsType } from "../../schema/work.schema";
 import { CreateExamType, PublishExamBodyType } from "../../schema/exam.schema";
 import { StartLiveClassBodyType } from "../../schema/live.class.schema";
+import { NODE_ENV } from "../../infrastructure/constants/env";
 
 
 
@@ -55,7 +56,11 @@ export class TeacherClassroomGateway {
             res.cookie(
                 'teacherClassroomToken',
                 classroomDetails.classroomToken,
-                { httpOnly: true }
+                {
+                    httpOnly: true,
+                    secure: NODE_ENV === 'production',
+                    sameSite: 'none'
+                }
             )
             res.status(200).json(classroomDetails)
         } catch (error) {
@@ -71,7 +76,7 @@ export class TeacherClassroomGateway {
             const body = req.body;
             const user = req.user;
             const classroom = req.classroom;
-         
+
 
             const accepted = await this.interactor.acceptJoiningRequest(classroom, user, body)
 
@@ -148,35 +153,35 @@ export class TeacherClassroomGateway {
 
             const classroom = req.classroom;
 
-            const body:saveMessageInput = req.body;
+            const body: saveMessageInput = req.body;
 
-            await this.interactor.sendClassroomMessage(user!, classroom!,body);
+            await this.interactor.sendClassroomMessage(user!, classroom!, body);
 
-            res.status(200).json({message:'ok'})
+            res.status(200).json({ message: 'ok' })
         } catch (error) {
             next(error)
         }
     }
 
-    async onSendPrivateMessage(req:CostumeRequest,res:Response,next:NextFunction){
+    async onSendPrivateMessage(req: CostumeRequest, res: Response, next: NextFunction) {
         try {
             const user = req.user;
-            const classroom =req.classroom;
+            const classroom = req.classroom;
             const body = req.body as SendPrivateMessageBodyType;
             const param = req.params as SendPrivateMessageParamsType;
-            await this.interactor.sendPrivateMessage(user!,classroom!,body,param);
-            res.status(200).json({message:'message send successfully'})
+            await this.interactor.sendPrivateMessage(user!, classroom!, body, param);
+            res.status(200).json({ message: 'message send successfully' })
         } catch (error) {
-           next(error) 
+            next(error)
         }
     }
 
-    async onGetPrivateMessages(req:CostumeRequest,res:Response,next:NextFunction){
+    async onGetPrivateMessages(req: CostumeRequest, res: Response, next: NextFunction) {
         try {
             const user = req.user;
-            const params =req.params as SendPrivateMessageParamsType;
+            const params = req.params as SendPrivateMessageParamsType;
             const classroom = req.classroom as ClassroomJwtPayload;
-            const messages = await this.interactor.getPrivateMessages(user!,params,classroom);
+            const messages = await this.interactor.getPrivateMessages(user!, params, classroom);
 
             res.status(200).json(messages)
         } catch (error) {
@@ -185,58 +190,58 @@ export class TeacherClassroomGateway {
     }
 
 
-    async onMaterilalUpload(req:CostumeRequest,res:Response,next:NextFunction){
+    async onMaterilalUpload(req: CostumeRequest, res: Response, next: NextFunction) {
         try {
             const user = req.user;
             const file = req.file;
-            const clasroom =  req.classroom;
+            const clasroom = req.classroom;
             const body = req.body as UploadMaterialBodyType;
-        
-            const response = await this.interactor.uploadMaterial(user!,clasroom!,body,file);
-           
+
+            const response = await this.interactor.uploadMaterial(user!, clasroom!, body, file);
+
             res.status(201).json(response)
         } catch (error) {
             next(error)
         }
     }
 
-    async onGetMaterials(req:CostumeRequest,res:Response,next:NextFunction){
+    async onGetMaterials(req: CostumeRequest, res: Response, next: NextFunction) {
         try {
             const user = req.user;
             const classroom = req.classroom;
-            const response = await this.interactor.getMaterials(user!,classroom!)
-            
+            const response = await this.interactor.getMaterials(user!, classroom!)
+
             res.status(201).json(response)
         } catch (error) {
             next(error)
         }
     }
-    
-    async onDeleteMaterial(req:CostumeRequest,res:Response,next:NextFunction){
+
+    async onDeleteMaterial(req: CostumeRequest, res: Response, next: NextFunction) {
         try {
             const user = req.user as UserJwtPayload;
             const classroom = req.classroom as ClassroomJwtPayload;
             const query = req.query as DeleteMaterialQueryType;
-            await this.interactor.deleteMaterial(user,classroom,query)
+            await this.interactor.deleteMaterial(user, classroom, query)
             res.status(200).json('response')
         } catch (error) {
             next(error)
         }
     }
 
-    async onCreateWork(req:CostumeRequest,res:Response,next:NextFunction){
+    async onCreateWork(req: CostumeRequest, res: Response, next: NextFunction) {
         try {
             const body = req.body as CreateWorkBodyType;
             const file = req.file
             const clasroom = req.classroom as ClassroomJwtPayload;
-            const work = await this.interactor.createWork(body,file,clasroom)
+            const work = await this.interactor.createWork(body, file, clasroom)
             res.status(201).json(work)
         } catch (error) {
             next(error)
         }
     }
 
-    async onGetAllWorks(req:CostumeRequest,res:Response,next:NextFunction){
+    async onGetAllWorks(req: CostumeRequest, res: Response, next: NextFunction) {
         try {
             const clasroom = req.classroom as ClassroomJwtPayload;
             const works = await this.interactor.getAllWorks(clasroom);
@@ -246,41 +251,41 @@ export class TeacherClassroomGateway {
             next(error)
         }
     }
-    
-    async onUpdateWorkMark(req:CostumeRequest,res:Response,next:NextFunction){
+
+    async onUpdateWorkMark(req: CostumeRequest, res: Response, next: NextFunction) {
         try {
             const params = req.params as UpdateWorkMarkParamsType;
             const body = req.body as UpdateWorkMarkBodyType;
-            const markUpdated = await this.interactor.updateWorkMark(params,body)
+            const markUpdated = await this.interactor.updateWorkMark(params, body)
             res.status(200).json(markUpdated)
         } catch (error) {
             next(error)
         }
     }
 
-    async onCreateExam(req:CostumeRequest,res:Response,next:NextFunction){
+    async onCreateExam(req: CostumeRequest, res: Response, next: NextFunction) {
         try {
             const body = req.body as CreateExamType;
             const classroom = req.classroom as ClassroomJwtPayload;
-            const newExam = await this.interactor.createExam(classroom,body)
+            const newExam = await this.interactor.createExam(classroom, body)
             res.status(200).json(newExam)
         } catch (error) {
             next(error)
         }
     }
 
-    async onGetAllExams(req:CostumeRequest,res:Response,next:NextFunction){
+    async onGetAllExams(req: CostumeRequest, res: Response, next: NextFunction) {
         try {
             const classroom = req.classroom as ClassroomJwtPayload;
             const allExams = await this.interactor.getAllExams(classroom);
-          
+
             res.status(200).json(allExams)
         } catch (error) {
             next(error)
         }
     }
 
-    async onGetAnnouncements(req:CostumeRequest,res:Response,next:NextFunction){
+    async onGetAnnouncements(req: CostumeRequest, res: Response, next: NextFunction) {
         try {
             const classroom = req.classroom as ClassroomJwtPayload
             const announcements = await this.interactor.getAnnouncements(classroom)
@@ -291,21 +296,21 @@ export class TeacherClassroomGateway {
         }
     }
 
-    async onPublishExamResult(req:CostumeRequest,res:Response,next:NextFunction){
+    async onPublishExamResult(req: CostumeRequest, res: Response, next: NextFunction) {
         try {
-            const params = req.params as {examId:string}
+            const params = req.params as { examId: string }
             const body = req.body as PublishExamBodyType
-            await this.interactor.publishExamResult(params,body)
-            res.status(200).json({status:'ok'})
+            await this.interactor.publishExamResult(params, body)
+            res.status(200).json({ status: 'ok' })
         } catch (error) {
             next(error)
         }
     }
 
-    async onGetLiveClassToken(req:CostumeRequest,res:Response,next:NextFunction){
+    async onGetLiveClassToken(req: CostumeRequest, res: Response, next: NextFunction) {
         try {
             const classroom = req.classroom as ClassroomJwtPayload;
-            
+
             const response = await this.interactor.getLiveClassToken(classroom)
             res.status(200).json(response)
         } catch (error) {
@@ -313,22 +318,22 @@ export class TeacherClassroomGateway {
         }
     }
 
-    async onStartLiveClass(req:CostumeRequest,res:Response,next:NextFunction){
+    async onStartLiveClass(req: CostumeRequest, res: Response, next: NextFunction) {
         try {
             const body = req.body as StartLiveClassBodyType;
             const clasroom = req.classroom as ClassroomJwtPayload;
-            await this.interactor.startLiveClass(clasroom,body)
+            await this.interactor.startLiveClass(clasroom, body)
             res.status(200).json('response')
         } catch (error) {
             next(error)
         }
     }
 
-    async onEndLiveClass(req:CostumeRequest,res:Response,next:NextFunction){
+    async onEndLiveClass(req: CostumeRequest, res: Response, next: NextFunction) {
         try {
             const body = req.body as StartLiveClassBodyType;
             const clasroom = req.classroom as ClassroomJwtPayload;
-            const response = await this.interactor.startLiveClass(clasroom,body)
+            const response = await this.interactor.startLiveClass(clasroom, body)
             res.status(200).json(response)
         } catch (error) {
             next(error)

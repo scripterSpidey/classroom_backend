@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { I_TeacherInteractor } from "../../interface/teacher_interface/I_teacher.interactor";
 import { accessTokenExpirationTime, refreshTokenExpirationTime } from "../../infrastructure/constants/appConstants";
 import { CostumeRequest } from "../../interface/I_express.request";
+import { NODE_ENV } from "../../infrastructure/constants/env";
 
 
 export class TeacherController {
@@ -35,12 +36,16 @@ export class TeacherController {
 
             res.cookie('teacherAccessToken', otpVerified.accessToken, {
                 maxAge: accessTokenExpirationTime,
-                httpOnly: true
+                httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             });
 
             res.cookie('teacherRefreshToken', otpVerified.refreshToken, {
                 maxAge: refreshTokenExpirationTime,
-                httpOnly: true
+                httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             })
 
             res.status(200).json(otpVerified)
@@ -56,12 +61,16 @@ export class TeacherController {
 
             res.cookie('teacherAccessToken', authenticated.accessToken, {
                 maxAge: accessTokenExpirationTime,
-                httpOnly: true
+                httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             })
 
             res.cookie('teacherRefreshToken', authenticated.refreshToken, {
                 maxAge: refreshTokenExpirationTime,
-                httpOnly: true
+                httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             })
 
             res.status(200).json(authenticated)
@@ -77,12 +86,16 @@ export class TeacherController {
 
             res.cookie('teacherAccessToken', '', {
                 maxAge: 0,
-                httpOnly: true
+                httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             })
 
             res.cookie('teacherRefreshToken', '', {
                 maxAge: 0,
-                httpOnly: true
+                httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             });
 
             res.status(200).json({
@@ -103,11 +116,15 @@ export class TeacherController {
             res.cookie("teacherAccessToken", registerResponse.accessToken, {
                 maxAge: accessTokenExpirationTime,
                 httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             })
 
             res.cookie("teacherRefreshToken", registerResponse.refreshToken, {
                 maxAge: refreshTokenExpirationTime,
                 httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             })
 
             res.status(200).json(registerResponse)

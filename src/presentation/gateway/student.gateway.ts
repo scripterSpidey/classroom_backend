@@ -4,6 +4,7 @@ import { accessTokenExpirationTime, refreshTokenExpirationTime } from "../../inf
 import { CostumeError } from "../../utils/costume.error";
 import { GoogleLoginInputType } from "../../schema/google.login.schema";
 import { CostumeRequest } from "../../interface/I_express.request";
+import { NODE_ENV } from "../../infrastructure/constants/env";
 interface LoginReq {
     email: string,
     password: string
@@ -37,11 +38,15 @@ export class StudentController {
             
             res.cookie("studentAccessToken", verifiedStatus.accessToken, {
                 maxAge: accessTokenExpirationTime,
-                httpOnly: true
+                httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             })
             res.cookie("studentRefreshToken", verifiedStatus.refreshToken, {
                 maxAge: refreshTokenExpirationTime,
                 httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
                 // secure:true
             })
 
@@ -60,11 +65,15 @@ export class StudentController {
             res.cookie("studentAccessToken", authenticated.accessToken, {
                 maxAge: accessTokenExpirationTime,
                 httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             })
 
             res.cookie("studentRefreshToken", authenticated.refreshToken, {
                 maxAge: refreshTokenExpirationTime,
                 httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             })
 
             res.status(200).json(authenticated)
@@ -79,11 +88,15 @@ export class StudentController {
             await this.interactor.logout(userId);
             res.cookie('studentAccessToken', '', {
                 maxAge: 0,
-                httpOnly: true
+                httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             });
             res.cookie('studentRefreshToken', '', {
                 maxAge: 0,
-                httpOnly: true
+                httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             });
             res.status(200).json({
                 authenticated: false
@@ -119,11 +132,15 @@ export class StudentController {
             res.cookie("studentAccessToken", registerResponse.accessToken, {
                 maxAge: accessTokenExpirationTime,
                 httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             })
 
             res.cookie("studentRefreshToken", registerResponse.refreshToken, {
                 maxAge: refreshTokenExpirationTime,
                 httpOnly: true,
+                secure : NODE_ENV === 'production',
+                sameSite:'none'
             })
 
             res.status(200).json(registerResponse)
