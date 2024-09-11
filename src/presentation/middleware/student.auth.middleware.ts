@@ -17,7 +17,7 @@ export class StudentAuthMiddleware {
     };
 
 
-    async authenticateStudent(req: CostumeRequest, res: Response, next: NextFunction) {
+    async authenticateStudent(req: Request, res: Response, next: NextFunction) {
 
         const { studentAccessToken, studentRefreshToken } = req.cookies as authReqInput;
 

@@ -5,6 +5,14 @@ import { UserJwtPayload } from "./service_interface/I_jwt";
 
 export interface CostumeRequest extends Request{
     file: any;
-    user?:UserJwtPayload|null
-    classroom:ClassroomJwtPayload|null
+    user:  {
+        userId:string,
+        sessionId:string,
+        role?:string
+    }
+    classroom:{
+        classroom_id:string,
+        class_teacher_id:string,
+        student_id:string
+    }
 }

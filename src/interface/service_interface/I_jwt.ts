@@ -4,8 +4,8 @@ import { JWToutput } from "../../application/service/jwt";
 
 
 export interface UserJwtPayload extends JwtPayload {
-    userId:string | Types.ObjectId
-    sessionId?:string,
+    userId:string ,
+    sessionId:string,
     role?:string
 }
 

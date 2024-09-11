@@ -16,7 +16,7 @@ export class StudentController {
         this.interactor = interactor
     };
 
-    async onRegister(req: CostumeRequest, res: Response, next: NextFunction) {
+    async onRegister(req: Request, res: Response, next: NextFunction) {
 
         try {
             const data = req.body;
@@ -29,7 +29,7 @@ export class StudentController {
 
     }
 
-    async onVerifyOTP(req: CostumeRequest, res: Response, next: NextFunction) {
+    async onVerifyOTP(req: Request, res: Response, next: NextFunction) {
         try {
             const { otp, userId } = req.body;
 
@@ -52,7 +52,7 @@ export class StudentController {
         }
     }
 
-    async onLogin(req: CostumeRequest, res: Response, next: NextFunction): Promise<void> {
+    async onLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { email, password } = req.body as LoginReq;
             const authenticated = await this.interactor.login(email, password);
@@ -73,7 +73,7 @@ export class StudentController {
         }
     }
 
-    async onLogout(req: CostumeRequest, res: Response, next: NextFunction): Promise<void> {
+    async onLogout(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { userId } = req.body;
             await this.interactor.logout(userId);
@@ -93,7 +93,7 @@ export class StudentController {
         }
     }
 
-    async onResendOTP(req: CostumeRequest, res: Response, next: NextFunction): Promise<void> {
+    async onResendOTP(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const data: ResendOTPInput = req.body;
 
@@ -110,7 +110,7 @@ export class StudentController {
 
     }
 
-    async onGoogleLogin(req: CostumeRequest, res: Response, next: NextFunction): Promise<void> {
+    async onGoogleLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const data = req.body;
 
@@ -132,7 +132,7 @@ export class StudentController {
         }
     }
 
-    onGetProfile(req: CostumeRequest, res: Response, next: NextFunction) {
+    onGetProfile(req: Request, res: Response, next: NextFunction) {
         const user = req.user;
         try {
 
@@ -141,7 +141,7 @@ export class StudentController {
         }
     }
 
-    async onProfielImageUpload(req: CostumeRequest, res: Response, next: NextFunction) {
+    async onProfielImageUpload(req: Request, res: Response, next: NextFunction) {
 
         const user = req.user;
 
@@ -154,7 +154,7 @@ export class StudentController {
         }
     }
 
-    async onAuthRoute(req: CostumeRequest, res: Response, next: NextFunction) {
+    async onAuthRoute(req: Request, res: Response, next: NextFunction) {
         try {
             const user = req.user;
             const student = await this.interactor.validateStudent(user)
@@ -166,7 +166,7 @@ export class StudentController {
 
     }
 
-    async onForgotPassword(req: CostumeRequest, res: Response, next: NextFunction) {
+    async onForgotPassword(req: Request, res: Response, next: NextFunction) {
         const body = req.body as { email: string }
         try {
             console.log(req.headers.host)
@@ -177,7 +177,7 @@ export class StudentController {
         }
     }
 
-    async onResetPassword(req: CostumeRequest, res: Response, next: NextFunction) {
+    async onResetPassword(req: Request, res: Response, next: NextFunction) {
         const params = req.params as { resetPasswordToken: string }
         const body = req.body as { newPassword: string }
         try {

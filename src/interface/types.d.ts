@@ -2,7 +2,8 @@ declare namespace Express {
     export interface Request {
         user: {
             userId:string,
-            sessionId:string
+            sessionId:string,
+            role?:string
         };
         classroom:{
             classroom_id:string,
@@ -14,3 +15,4 @@ declare namespace Express {
         user: any;
     }
   }
+

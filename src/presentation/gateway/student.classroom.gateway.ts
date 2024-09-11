@@ -17,7 +17,7 @@ export class StudentClassroomGateway {
         this.interactor = interactor;
     }
 
-    async onGetStudentAllClassrooms(req:CostumeRequest,res:Response,next:NextFunction):Promise<void>{
+    async onGetStudentAllClassrooms(req:Request,res:Response,next:NextFunction):Promise<void>{
         const user = req.user;
        
         try {
@@ -28,7 +28,7 @@ export class StudentClassroomGateway {
         }
     } 
 
-    async onSearchClassroom(req: CostumeRequest, res: Response, next: NextFunction): Promise<void> {
+    async onSearchClassroom(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const data = req.params;
             const user = req.user;
@@ -226,10 +226,10 @@ export class StudentClassroomGateway {
         }
     }
 
-    async onGetJoiningTokenForLiveClass(req:CostumeRequest,res:Response,next:NextFunction){
+    async onGetJoiningTokenForLiveClass(req:Request,res:Response,next:NextFunction){
         try {
             const classroom = req.classroom as ClassroomJwtPayload;
-            const user = req.user as UserJwtPayload;
+            const user = req.user 
             const response = await this.interactor.getJoinTokenForLiveClass(user,classroom)
             res.status(200).json(response)
         } catch (error) {

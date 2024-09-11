@@ -279,7 +279,7 @@ export class StudentClassroomInteractor implements I_StudentClassroomInteractor 
         try {
             const examDetails = await this.classroomRepo.fetchExamDetails(clasroom.classroom_id, exam.examId);
             if (!examDetails) throw new CostumeError(404, "This exam details are not available");
-            if (examDetails.started_students?.includes(user.userId as ObjectId)) {
+            if (examDetails.started_students?.includes(new mongoose.Types.ObjectId(user.userId) )) {
                 throw new CostumeError(404, "You have already attended this exam.")
             }
             console.log(clasroom);

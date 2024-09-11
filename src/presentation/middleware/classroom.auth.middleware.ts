@@ -20,7 +20,7 @@ export class ClassroomAuthMiddleware {
             const teacher = req.user;
             if (teacherClassroomToken) {
                 const classroom:ClassroomJwtPayload|null = await this.interactor.validateClassroomOwnership(teacherClassroomToken, teacher)
-                req.classroom = classroom;
+                req.classroom = classroom as ClassroomJwtPayload;
                 return next()
             }
             throw new CostumeError(401, "No classroom access token!")
@@ -36,7 +36,7 @@ export class ClassroomAuthMiddleware {
             const student = req.user;
             if (studentClassroomToken) {
                 const classroom:ClassroomJwtPayload|null = await this.interactor.validateClassroomMembership(studentClassroomToken, student!)
-                req.classroom = classroom;
+                req.classroom = classroom as ClassroomJwtPayload;
                 return next()
             }
             throw new CostumeError(401, "No student classroom access token!")
