@@ -28,7 +28,10 @@ export class TeacherAuthMiddleware {
                 if (decryptedAccessToken.message == 'Authenticated'){
                     const userPayload = decryptedAccessToken.payload as UserJwtPayload;
                     console.log('payload: ',userPayload)
-                    if(userPayload.role!='teacher') throw new CostumeError(401,'Invalid credentials');
+                    if(userPayload.role!='teacher'){
+                        console.log('user role is not teacher in acces token')
+                        throw new CostumeError(401,'Invalid credentials');
+                    } 
 
                     req.user = userPayload;
                     return next();
@@ -42,7 +45,10 @@ export class TeacherAuthMiddleware {
                 if (decryptedRefreshToken.payload) {
                     const userPayload = decryptedRefreshToken.payload as UserJwtPayload;
 
-                    if(decryptedRefreshToken.payload.role!='teacher') throw new CostumeError(401,'Invalid credentials');
+                    if(decryptedRefreshToken.payload.role!='teacher'){
+                        console.log('Role is not teacher in refresh token')
+                        throw new CostumeError(401,'Invalid credentials');
+                    } 
 
                     const activeSession = await this.authInteractor.validateSession(userPayload.sessionId!);
                     
@@ -59,7 +65,7 @@ export class TeacherAuthMiddleware {
                     }
                 }
             }
-
+            console.log('There are no tokens')
             throw new CostumeError(401, "Invalid credentials");
         } catch (error) {
             next(error)
