@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from 'dotenv';
 dotenv.config()
 import { connectToDB } from "./infrastructure/config/mongoDB";
-
+import http, { IncomingMessage, Server, ServerResponse } from 'http'
 import { PORT } from "./infrastructure/constants/env";
 import { API_ORIGIN } from "./infrastructure/constants/env";
 import cors from "cors"
@@ -19,7 +19,6 @@ const startServer = async(): Promise<void>=>{
     
 
     await connectToDB();
-
     app.use(morgan('dev'))
 
     app.use(express.json());
@@ -31,9 +30,6 @@ const startServer = async(): Promise<void>=>{
         })
     )
     app.use(cookieParser());
-
-
-
 
     //test req checker...........
     app.use((req,res,next,)=>{
@@ -51,6 +47,9 @@ const startServer = async(): Promise<void>=>{
         console.log(`server active on port:${PORT}`)
     }) 
 
+    
+
 }  
 
-startServer();   
+ startServer();   
+

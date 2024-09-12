@@ -4,7 +4,6 @@ import http from 'http';
 import express from 'express';
 import { API_ORIGIN } from "../../infrastructure/constants/env";
 import crypto from 'crypto'
-
 const app = express();
 
 const server = http.createServer(app)
@@ -12,8 +11,10 @@ const server = http.createServer(app)
 const io = new Server(server, {
     cors: {
         origin: API_ORIGIN,
-        credentials:true
-    }
+        credentials:true,
+        methods: ['GET', 'POST'],
+    },
+    path: "/classconnect/socket.io"
 });
 
 export const getReceiverSocketId = (receiverId:string)=>{
